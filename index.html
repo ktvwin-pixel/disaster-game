@@ -168,6 +168,12 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .rights{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12px;text-align:left;line-height:1.6;width:100%}
 .rights dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:6px 0}
 .rights dt{color:var(--muted)} .rights dd{margin:0;overflow-wrap:anywhere}
+.snd{background:none;border:1.5px solid var(--line);color:var(--ink);border-radius:10px;width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;padding:0}
+.snd svg{width:20px;height:20px}
+.snd .x{display:none}
+.snd[aria-pressed="false"]{color:var(--muted)}
+.snd[aria-pressed="false"] .w1,.snd[aria-pressed="false"] .w2{display:none}
+.snd[aria-pressed="false"] .x{display:inline}
 .hint{background:var(--night);border-radius:10px;padding:8px 10px;font-size:13px}
 .hint ul{margin:4px 0 0;padding-left:18px}
 
@@ -225,6 +231,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
       <span class="lab">복장</span>
       <div class="costumes" id="segCostume"></div>
     </div>
+    <button class="btn ghost" data-snd>배경음악</button>
     <button class="btn" id="btnStart">훈련 시작</button>
     <div class="foot">© 2026 KOREA CONTENTS LAB. All rights reserved.<button class="linkbtn" data-rights>저작권 정보</button><div class="rights" data-rightsbox hidden></div></div>
   </section>
@@ -243,6 +250,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
     <div class="maprow">
       <button class="btn" id="btnRandom">무작위 출동</button>
       <button class="btn ghost" id="btnEdit">대원 정보</button>
+      <button class="btn ghost snd-text" data-snd style="flex:1">배경음악</button>
     </div>
     <button class="btn ghost small" id="btnReset" style="align-self:center">진행 기록 초기화</button>
     <p class="muted" id="resetMsg" style="text-align:center;font-size:12px;margin:0" hidden></p>
@@ -255,6 +263,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
     <div class="hud pad">
       <button class="quit" id="btnQuit" aria-label="현장에서 철수">✕</button>
       <div><div class="st" id="hudStage"></div><div class="turn" id="hudTurn"></div></div>
+      <button class="snd" data-snd aria-label="배경음악"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="w1" d="M16.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M19 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg></button>
       <div class="power"><div class="pl"><span>소통 파워</span><b id="hudPow"></b></div><div class="bars" id="bars"></div></div>
     </div>
     <div class="scene" id="scene"></div>
@@ -560,7 +569,7 @@ document.head.appendChild(sceneCSS);
 
 /* ===================== 상태 ===================== */
 const KEY='disasterHeroV1';
-let P={name:'',g:'m',c:'lime',cleared:{},seen:[],tot:0,good:0};
+let P={snd:true,name:'',g:'m',c:'lime',cleared:{},seen:[],tot:0,good:0};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s)P=Object.assign(P,s);}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P));}catch(e){}};
 const $=id=>document.getElementById(id);
@@ -662,7 +671,7 @@ function submit(){
   const m=document.createElement('div');m.className='msg me';m.innerHTML=`<div class="who">${esc(P.name)} ${rank()}</div>${esc(ans)}`;$('log').appendChild(m);
   $('inAns').value='';$('charCount').textContent='0자';$('hintBox').hidden=true;voiceMsg('');
   G.power=Math.max(0,Math.min(10,G.power+(r.g==='good'?1:r.g==='bad'?-1:0)));
-  G.rec.push({q:tq[0],a:ans,g:r.g});P.tot++;if(r.g==='good')P.good++;save();
+  sfx(r.g);G.rec.push({q:tq[0],a:ans,g:r.g});P.tot++;if(r.g==='good')P.good++;save();
   // 캐릭터 반응
   const npc=$('aNpc');npc.innerHTML=npcAvatar(G.s.npc,r.g);npc.classList.remove('hop','flinch');void npc.offsetWidth;npc.classList.add(r.g==='bad'?'flinch':'hop');
   $('aMe').innerHTML=me(r.g);
@@ -709,9 +718,66 @@ $('btnMic').onclick=()=>{
   }catch(e){keyboardFallback();}
 };
 
+/* ===================== 배경음악·효과음 (Web Audio 자체 연주곡 · © KOREA CONTENTS LAB) ===================== */
+const AU={ctx:null,master:null,bgm:null,timer:null,step:0,next:0};
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function auInit(){
+  try{
+    if(!AU.ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return false;
+      AU.ctx=new C();AU.master=AU.ctx.createGain();AU.master.gain.value=0.9;AU.master.connect(AU.ctx.destination);
+      AU.bgm=AU.ctx.createGain();AU.bgm.gain.value=0;AU.bgm.connect(AU.master);}
+    if(AU.ctx.state==='suspended')AU.ctx.resume();
+    return true;
+  }catch(e){return false;}
+}
+function tone(dest,m,t,dur,{type='sine',vol=.1,att=.01,cut=0}={}){
+  const c=AU.ctx,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=mtof(m);
+  let node=o;if(cut){const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=cut;o.connect(f);node=f;}
+  node.connect(g);g.connect(dest);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.start(t);o.stop(t+dur+.05);
+}
+// 4마디 루프: Am – F – C – G (자체 작곡)
+const PROG=[{b:45,c:[57,60,64]},{b:41,c:[53,57,60]},{b:48,c:[55,60,64]},{b:43,c:[55,59,62]}];
+const ARP=[0,1,2,1,0,2,1,2], BASS=[1,0,0,1,1,0,1,0], EIGHTH=60/92/2;
+function schedule(step,t){
+  const bar=PROG[Math.floor(step/8)%4],i=step%8;
+  if(i===0)bar.c.forEach(m=>tone(AU.bgm,m,t,EIGHTH*8.2,{type:'triangle',vol:.045,att:.35,cut:1200}));
+  if(BASS[i])tone(AU.bgm,bar.b,t,EIGHTH*1.6,{type:'triangle',vol:.11,cut:500});
+  tone(AU.bgm,bar.c[ARP[i]]+12,t,EIGHTH*.9,{type:'sine',vol:i%2?.025:.04});
+  if(i===4&&Math.floor(step/8)%2)tone(AU.bgm,96,t,.08,{type:'square',vol:.006,cut:3000});
+}
+function tick(){while(AU.next<AU.ctx.currentTime+.35){schedule(AU.step,AU.next);AU.next+=EIGHTH;AU.step=(AU.step+1)%32;}}
+function bgmStart(){
+  if(!P.snd||document.hidden||!auInit())return;
+  const t=AU.ctx.currentTime;AU.bgm.gain.cancelScheduledValues(t);AU.bgm.gain.setTargetAtTime(1,t,.4);
+  if(AU.timer)return;AU.next=t+.08;AU.timer=setInterval(tick,90);tick();
+}
+function bgmStop(){
+  if(!AU.ctx)return;const t=AU.ctx.currentTime;AU.bgm.gain.cancelScheduledValues(t);AU.bgm.gain.setTargetAtTime(0,t,.15);
+  clearInterval(AU.timer);AU.timer=null;
+}
+function sfx(kind){
+  if(!P.snd||!auInit())return;const t=AU.ctx.currentTime+.02,d=AU.master;
+  if(kind==='good'){tone(d,76,t,.25,{vol:.12});tone(d,83,t+.1,.35,{vol:.12});}
+  else if(kind==='mid'){tone(d,72,t,.3,{type:'triangle',vol:.1});}
+  else if(kind==='bad'){tone(d,47,t,.35,{type:'sawtooth',vol:.08,cut:700});tone(d,44,t+.12,.4,{type:'sawtooth',vol:.07,cut:600});}
+  else if(kind==='pass'){[72,76,79,84].forEach((m,k)=>tone(d,m,t+k*.12,.5,{type:'triangle',vol:.1}));}
+  else if(kind==='fail'){[64,60,57].forEach((m,k)=>tone(d,m,t+k*.18,.5,{type:'triangle',vol:.08}));}
+  else if(kind==='medal'){[60,64,67,72,76,79,84].forEach((m,k)=>tone(d,m,t+k*.11,.9,{type:'triangle',vol:.09}));tone(d,48,t+.77,1.6,{type:'triangle',vol:.1});}
+}
+function sndUI(){document.querySelectorAll('[data-snd]').forEach(b=>{b.setAttribute('aria-pressed',String(!!P.snd));if(!b.classList.contains('snd'))b.textContent=P.snd?'배경음악 켜짐':'배경음악 꺼짐';else b.setAttribute('aria-label',P.snd?'배경음악 끄기':'배경음악 켜기');});}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-snd]');
+  if(b){P.snd=!P.snd;save();sndUI();P.snd?bgmStart():bgmStop();return;}
+  if(P.snd)bgmStart();
+});
+document.addEventListener('visibilitychange',()=>{document.hidden?bgmStop():(P.snd&&AU.ctx&&bgmStart());});
+
 /* ===================== 결과 ===================== */
 function finish(){
   const pass=G.power>=PASS, d=G.d;
+  sfx(pass?'pass':'fail');
   if(pass)P.cleared[d]=Math.max(P.cleared[d]||0,G.power);
   save();
   const all=ORDER.every(k=>P.cleared[k]);
@@ -731,6 +797,7 @@ function finish(){
   Object.keys(fn).forEach(b);
 }
 function medal(){
+  sfx('medal');
   const today=new Date();const ds=`${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
   const rate=P.tot?Math.round(P.good/P.tot*100):0;
   $('scrMedal').innerHTML=`
@@ -780,6 +847,7 @@ document.addEventListener('click',e=>{
 try{console.info('%c재난소통 영웅 · © 2026 KOREA CONTENTS LAB. All rights reserved.','font-weight:bold');}catch(e){}
 
 /* ===================== 시작 ===================== */
+sndUI();
 renderSetup();
 if(P.name){renderMap();show('scrMap');}else show('scrSetup');
 </script>
