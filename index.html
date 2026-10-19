@@ -831,7 +831,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('visibilitychange',()=>{document.hidden?bgmStop():(P.snd&&AU.ctx&&bgmStart());});
 
 /* ===================== 랭킹 (인증번호 · 구글 시트 서버) ===================== */
-const RANK_API='';  // 랭킹 서버(Apps Script 웹 앱) 주소: https://script.google.com/macros/s/…/exec
+const RANK_API='https://script.google.com/macros/s/AKfycbwlW_lKSKZ7mS0_LpPy25Ri2saIdjmCT1nx2Du0eJ-RzbW13g7Xpj7C0ObZHfELw9f3Mg/exec';  // 랭킹 서버(Apps Script 웹 앱) 주소: https://script.google.com/macros/s/…/exec
 const RK={top:null,me:null,count:0,loading:false,err:'',meErr:'',back:'scrMap'};
 let flushing=null;
 const ERRMSG={
