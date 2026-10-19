@@ -278,6 +278,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
       <label for="inCode">랭킹 인증번호 <span class="muted" style="font-weight:400">(이어하기 · 선택)</span></label>
       <div class="codeform"><input id="inCode" placeholder="KCL-XXXX-XXXX" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn ghost" id="btnLoad" type="button">불러오기</button></div>
       <div class="formmsg" id="loadMsg" role="status">전에 쓰던 인증번호를 넣으면 내 이름·복장·통과 기록과 랭킹을 이어서 쓸 수 있어요.</div>
+      <div id="spApply"></div>
     </div>
     <div class="maprow"><button class="btn ghost" data-snd>배경음악</button><button class="btn ghost" data-rank>랭킹 보기</button></div>
     <button class="btn" id="btnStart">훈련 시작</button>
@@ -1298,55 +1299,63 @@ function renderRank(force){
   if(force||sig!==RK.sig){RK.sig=sig;renderMe(meBox);}
   renderList(list);
 }
-function applyBox(){
+/* 인증번호 신청서: 랭킹 화면(ap)과 첫 화면(sp)에서 함께 씀 */
+const APPLY_OPEN={ap:false,sp:false};
+function applyBox(px='ap'){
   return `<div class="applybox">
-      <button class="linkbtn" id="apToggle" type="button" style="align-self:flex-start;font-size:13px;color:var(--signal)">인증번호가 없나요? 지금 신청하기</button>
-      <form class="apform" id="apForm" novalidate ${RK.applyOpen?'':'hidden'}>
-        <div class="tip" id="apMode">신청 방식을 확인하고 있어요…</div>
-        <label for="apName">이름<input type="text" id="apName" maxlength="20" autocomplete="name" value="${esc(P.name&&P.name!=='새내기'?P.name:'')}"></label>
-        <label for="apOrg">소속 (선택)<input type="text" id="apOrg" maxlength="30" placeholder="예: OO구청 안전총괄과"></label>
-        <label for="apEmail">이메일 (인증번호를 받을 주소)<input type="email" id="apEmail" maxlength="80" inputmode="email" autocomplete="email" placeholder="name@example.com"></label>
-        <label class="agree" for="apAgree"><input type="checkbox" id="apAgree"><span>인증번호 발급과 안내를 위해 이름·소속·이메일을 수집·이용하는 데 동의합니다. 랭킹에는 닉네임만 표시됩니다.</span></label>
-        <button class="btn" id="apSubmit" type="submit">인증번호 신청</button>
+      <button class="linkbtn" id="${px}Toggle" type="button" style="align-self:flex-start;font-size:13px;color:var(--signal)">인증번호가 없나요? 지금 신청하기</button>
+      <form class="apform" id="${px}Form" novalidate ${APPLY_OPEN[px]?'':'hidden'}>
+        <div class="tip" id="${px}Mode">신청 방식을 확인하고 있어요…</div>
+        <label for="${px}Name">이름<input type="text" id="${px}Name" maxlength="20" autocomplete="name" value="${esc(P.name&&P.name!=='새내기'?P.name:'')}"></label>
+        <label for="${px}Org">소속 (선택)<input type="text" id="${px}Org" maxlength="30" placeholder="예: OO초등학교 6학년 2반"></label>
+        <label for="${px}Email">이메일 (인증번호를 받을 주소)<input type="email" id="${px}Email" maxlength="80" inputmode="email" autocomplete="email" placeholder="name@example.com"></label>
+        <label class="agree" for="${px}Agree"><input type="checkbox" id="${px}Agree"><span>인증번호 발급과 안내를 위해 이름·소속·이메일을 수집·이용하는 데 동의합니다. 랭킹에는 별칭만 표시됩니다. 만 14세 미만은 보호자 동의를 받은 뒤 신청하거나 선생님께 번호를 받으세요.</span></label>
+        <button class="btn" id="${px}Submit" type="submit">인증번호 신청</button>
       </form>
-      <div class="formmsg" id="apMsg" role="status"></div>
+      <div class="formmsg" id="${px}Msg" role="status"></div>
     </div>`;
 }
-async function loadApplyMode(){
-  const t=$('apMode'),btn=$('apSubmit');if(!t)return;
+async function loadApplyMode(px='ap'){
+  const t=$(px+'Mode'),btn=$(px+'Submit');if(!t)return;
   try{
     const c=await api({action:'config'});
     if(c.ok&&!c.open){t.textContent=ERRMSG.closed;btn.disabled=true;return;}
     t.textContent=c.mode==='approve'?'운영자가 확인한 뒤 입력한 이메일로 인증번호를 보내 드립니다.':'신청하면 바로 인증번호가 발급되어 자동으로 등록되고, 이메일로도 보내 드립니다.';
   }catch(e){t.textContent=errText(e);}
 }
-function bindApply(){
-  const tg=$('apToggle');if(!tg)return;
-  tg.onclick=()=>{RK.applyOpen=!$('apForm').hidden?false:true;$('apForm').hidden=!RK.applyOpen;if(RK.applyOpen){loadApplyMode();try{$('apName').value?$('apEmail').focus():$('apName').focus();}catch(e){}}};
-  if(RK.applyOpen)loadApplyMode();
-  $('apForm').onsubmit=async e=>{
+function bindApply(px='ap'){
+  const tg=$(px+'Toggle');if(!tg)return;
+  const form=$(px+'Form');
+  tg.onclick=()=>{APPLY_OPEN[px]=form.hidden;form.hidden=!APPLY_OPEN[px];if(APPLY_OPEN[px]){loadApplyMode(px);try{$(px+'Name').value?$(px+'Email').focus():$(px+'Name').focus();}catch(e){}}};
+  if(APPLY_OPEN[px])loadApplyMode(px);
+  form.onsubmit=async e=>{
     e.preventDefault();
-    const msg=$('apMsg'),btn=$('apSubmit');
-    const name=$('apName').value.trim(),org=$('apOrg').value.trim(),email=$('apEmail').value.trim();
+    const msg=$(px+'Msg'),btn=$(px+'Submit');
+    const name=$(px+'Name').value.trim(),org=$(px+'Org').value.trim(),email=$(px+'Email').value.trim();
     const bad=k=>{msg.className='formmsg err';msg.textContent=ERRMSG[k];};
     if(!name)return bad('need_name');
     if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(email))return bad('bad_email');
-    if(!$('apAgree').checked)return bad('need_agree');
+    if(!$(px+'Agree').checked)return bad('need_agree');
     btn.disabled=true;msg.className='formmsg';msg.textContent='신청을 보내고 있어요…';
     try{
       const res=await api({action:'apply',name,org,email,agree:'1'});
       if(!res.ok)throw {code:res.error};
       if(res.status==='issued'){
-        try{await registerCode(res.code);}catch(err){P.code=fmtCode(res.code);save();}
-        RK.applyOpen=false;RK.meErr='';
-        RK.notice=`인증번호 <b>${esc(res.code)}</b> 가 발급되어 자동으로 등록되었습니다.${res.mailed?` ${esc(email)}로도 보내 드렸어요.`:''} 다른 기기에서 쓸 때 필요하니 메모해 두세요.`;
-        sfx('good');renderRank(true);loadRank();renderBanner();
+        try{const r0=await registerCode(res.code);applyProfile(r0);}catch(err){P.code=fmtCode(res.code);}
+        APPLY_OPEN[px]=false;form.hidden=true;RK.meErr='';
+        const note=`인증번호 <b>${esc(res.code)}</b> 가 발급되어 자동으로 등록되었습니다.${res.mailed?` ${esc(email)}로도 보내 드렸어요.`:''} 다음에 이어서 하려면 이 번호가 필요하니 꼭 메모해 두세요.`;
+        sfx('good');renderBanner();
+        if(px==='sp'){
+          if(!P.name||P.name==='새내기')P.name=name;
+          $('inCode').value=res.code;renderSetup();
+          msg.className='formmsg ok';msg.innerHTML=`<div class="notice ok">${note}</div>`;
+        }else{RK.notice=note;renderRank(true);loadRank();}
       }else if(res.status==='pending'){
-        RK.applyOpen=false;$('apForm').hidden=true;
+        APPLY_OPEN[px]=false;form.hidden=true;
         msg.className='formmsg ok';msg.textContent=res.again?`이미 접수된 신청입니다. 운영자가 승인하면 ${email}로 인증번호를 보내 드립니다.`:`신청이 접수되었습니다. 운영자가 승인하면 ${email}로 인증번호를 보내 드립니다.`;
       }else if(res.status==='already'){
-        RK.applyOpen=false;$('apForm').hidden=true;
-        msg.className='formmsg ok';msg.textContent=`이미 인증번호를 받은 이메일입니다. ${res.mailed?email+'로 번호를 다시 보내 드렸어요. 메일함을 확인하세요.':'운영자에게 번호를 문의하세요.'}`;
+        APPLY_OPEN[px]=false;form.hidden=true;
+        msg.className='formmsg ok';msg.textContent=`이미 인증번호를 받은 이메일입니다. ${res.mailed?email+'로 번호를 다시 보내 드렸어요. 메일함을 확인한 뒤 위 칸에 입력하세요.':'운영자에게 번호를 문의하세요.'}`;
       }
     }catch(err){msg.className='formmsg err';msg.textContent=errText(err);btn.disabled=false;}
   };
@@ -1362,8 +1371,8 @@ function renderMe(meBox){
         <button class="btn" id="rkSubmit" type="submit">등록</button>
       </form>
       <div class="formmsg" id="rkMsg" role="status"></div>
-      ${applyBox()}</div>`;
-    bindApply();
+      ${applyBox('ap')}</div>`;
+    bindApply('ap');
     $('codeForm').onsubmit=async e=>{
       e.preventDefault();
       const v=$('rkCode').value,msg=$('rkMsg'),btn=$('rkSubmit');
@@ -1477,6 +1486,7 @@ document.addEventListener('click',e=>{
 try{console.info('%c재난소통 영웅 · © 2026 KOREA CONTENTS LAB. All rights reserved.','font-weight:bold');}catch(e){}
 
 /* ===================== 시작 ===================== */
+$('spApply').innerHTML=applyBox('sp');bindApply('sp');
 sndUI();
 renderSetup();
 show('scrSetup');
