@@ -14,7 +14,7 @@
  */
 const STAGES = ['flood', 'fire', 'quake', 'blast', 'heat', 'collapse', 'virus'];
 const STAGE_KO = { flood: '침수', fire: '화재', quake: '지진', blast: '폭발', heat: '폭염', collapse: '건물붕괴', virus: '감염병확산' };
-const COSTUME_KO = { lime: '민방위 대원', fire: '소방대원', police: '경찰공무원', gov: '공무원', blue: '일반인' };
+const COSTUME_KO = { lime: '민방위 대원', fire: '소방관', police: '경찰관', gov: '공무원', blue: '일반인' };
 const PASS = 8;          // 관문 통과 기준 파워
 const STAGE_MULT = 10;   // 관문 점수 = 관문별 최고 파워 합 × 10
 const GOOD_PTS = 5;      // 적정 답변 1개당 참여 점수

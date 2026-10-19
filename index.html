@@ -543,8 +543,8 @@ function grade(ans,turn){
 /* ===================== 그림 ===================== */
 const COST={
   lime:{n:'민방위\n대원',main:'#c4dc2c',trim:'#ff8a1f',hat:'#c4dc2c',pants:'#3b3f2a',kind:'cap'},
-  fire:{n:'소방대원',main:'#d9822b',trim:'#e6edf5',hat:'#f2c21b',pants:'#2b2f3c',kind:'helmet'},
-  police:{n:'경찰공무원',main:'#23376e',trim:'#d6f23a',hat:'#18275a',pants:'#1a2245',kind:'police'},
+  fire:{n:'소방관',main:'#d9822b',trim:'#e6edf5',hat:'#f2c21b',pants:'#2b2f3c',kind:'helmet'},
+  police:{n:'경찰관',main:'#23376e',trim:'#d6f23a',hat:'#18275a',pants:'#1a2245',kind:'police'},
   gov:{n:'공무원',main:'#2b3a55',trim:'#ffffff',hat:'',pants:'#2b3445',kind:'gov'},
   blue:{n:'일반인',main:'#4f8f8b',trim:'#ffffff',hat:'',pants:'#34476e',kind:null}
 };
@@ -630,7 +630,8 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P));}catch(e){}};
 const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const rank=()=>P.c==='blue'?'시민':P.c==='gov'?'주무관':'대원';
+const rank=()=>({blue:'시민',gov:'주무관',fire:'소방관',police:'경찰관'})[P.c]||'대원';
+const costumeName=s=>String(s||'').replace('소방대원','소방관').replace('경찰공무원','경찰관');
 const me=mood=>avatar(Object.assign({g:P.g,mood},COST[P.c]));
 function show(id){['scrSetup','scrMap','scrPlay','scrResult','scrMedal','scrRank'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0);}
 
@@ -994,7 +995,7 @@ function renderRank(){
   if(!RK.top.length){list.innerHTML=`<div class="rkstate">아직 랭킹이 비어 있어요. 첫 번째 주인공이 되어 보세요!</div>`;return;}
   list.innerHTML=`<ol class="rlist" aria-label="상위 랭킹">${RK.top.map(x=>`<li class="${x.me?'me':''}">
       <span class="no ${x.rank<=3?'g'+x.rank:''}">${x.rank}</span>
-      <span style="min-width:0"><span class="nm">${esc(x.nick)}${x.me?' (나)':''}</span><span class="sub">${esc(x.costume||'')}<span class="dots">${ORDER.map((_,i)=>`<i class="${i<x.passed?'on':''}"></i>`).join('')}</span></span></span>
+      <span style="min-width:0"><span class="nm">${esc(x.nick)}${x.me?' (나)':''}</span><span class="sub">${esc(costumeName(x.costume))}<span class="dots">${ORDER.map((_,i)=>`<i class="${i<x.passed?'on':''}"></i>`).join('')}</span></span></span>
       <span class="pt">${x.total}<small>점</small></span></li>`).join('')}</ol>
     <p class="muted" style="font-size:12px;margin:8px 0 0;text-align:center">참여 ${RK.count}명 · 상위 ${RK.top.length}명 표시</p>`;
 }
