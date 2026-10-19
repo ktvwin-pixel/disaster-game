@@ -9,6 +9,8 @@ FONT = '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc'
 
 def C(h, a=None):
     h = h.lstrip('#')
+    if len(h) == 3:
+        h = ''.join(c * 2 for c in h)
     return np.array([int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)], np.float32)
 
 
