@@ -449,6 +449,111 @@ def nursing():
 
 SCENES = dict(underpass=underpass, valley=valley, market=market, wildfire=wildfire, tsunami=tsunami, school=school,
               gasleak=gasleak, rooftop=rooftop, parking=parking, oldapt=oldapt, nursing=nursing)
+# ------------------------------------------------------------------ 도심 오피스 지진 (e1)
+def office():
+    img = sky([(0, '#3a4252'), (.6, '#7a808c'), (1, '#a8a49c')])
+    # 유리 오피스 타워들
+    for i, (x0, t, x1, col) in enumerate([(0, 120, 260, '#5a7a96'), (300, 60, 640, '#6a8aa6'), (680, 140, 940, '#4e6e8a'), (960, 90, 1200, '#5e7e9a')]):
+        tg = F(col) * shade_v(t, GY, 1.15, .75)[..., None]
+        refl = smooth(.4, .9, noise(60, 4, 1300 + i, sy=200))
+        paint(img, tg * (0.85 + .3 * refl)[..., None], rect(x0, t, x1, GY))
+        g = []
+        for y in range(t + 20, GY - 40, 34):
+            g.append((x0, y, x1, y))
+        for x in range(x0 + 30, x1, 44):
+            g.append((x, t, x, GY - 40))
+        paint(img, C('#2a3a4a'), lines(g, 2), .55)
+    # 금 간 유리 / 깨진 창
+    for (cx, cy) in [(420, 300), (520, 420), (780, 330)]:
+        cr = [(cx, cy, cx + 30, cy - 26), (cx, cy, cx - 24, cy - 30), (cx, cy, cx + 36, cy + 14), (cx, cy, cx - 30, cy + 20)]
+        paint(img, C('#e8f2f8'), lines(cr, 2), .8)
+        paint(img, C('#1a2430'), ellipse(cx, cy, 10, 8))
+    # 떨어지는 유리 파편
+    rng = np.random.default_rng(31)
+    for _ in range(40):
+        x, y = 300 + rng.random() * 640, 340 + rng.random() * 300
+        s = 4 + rng.random() * 8
+        add(img, C('#dff0fa'), poly([(x, y), (x + s, y + s * .4), (x + s * .3, y + s)], .8), .7)
+    # 로비 입구 + 광장
+    paint(img, F('#2a3440'), rect(380, 620, 560, GY))
+    paint(img, F('#c8c2b6') * tex(1310, 30)[..., None], rect(0, GY, W, H))
+    paint(img, C('#5a8a4a'), ellipse(1020, 800, 140, 30))
+    for x in (980, 1060):
+        paint(img, C('#4a3a2a'), rect(x - 5, 720, x + 5, 790)); paint(img, F('#4a7a3a') * tex(1320 + x, 10)[..., None], ellipse(x, 700, 44, 36))
+    sign(img, 700, 650, 940, 710, '#1d8a4c', ['지진옥외대피장소 →'], size=26, pole=820)
+    people(img, [880, 920, 960, 1000, 1040, 1080, 1120], 860, col='#2a3240', s=1.2, seed=7)
+    smoke(img, rect(0, 560, W, 760), 1330, dark='#c8bca8', density=.3, scale=90)
+    return finish(img, .26, .013)
+
+
+# ------------------------------------------------------------------ 건설현장 폭염 (w1)
+def construction():
+    img = sky([(0, '#ff8a2a'), (.4, '#ffb648'), (1, '#ffe2a0')])
+    glow(img, 950, 120, 220, '#fff2c0', .9); glow(img, 950, 120, 70, '#ffffff', 1.0)
+    # 타워크레인
+    cr = []
+    for i in range(18):
+        y = 90 + i * 30
+        cr += [(180, y, 204, y + 30), (204, y, 180, y + 30)]
+    cr += [(180, 90, 180, GY), (204, 90, 204, GY), (60, 90, 760, 90), (60, 108, 760, 108), (560, 108, 560, 260)]
+    paint(img, C('#d8a020'), lines(cr, 4))
+    paint(img, C('#6a6a6a'), rect(552, 260, 568, 300))
+    # 골조 건물 + 비계
+    paint(img, F('#a8a296') * tex(1400, 20)[..., None], rect(380, 260, 900, GY))
+    for f in range(6):
+        y = 280 + f * 78
+        paint(img, C('#8a847a'), rect(380, y, 900, y + 12))
+        paint(img, C('#3a3430'), rect(392, y + 14, 888, y + 70), .8)
+    for x in range(380, 901, 104):
+        paint(img, C('#9a948a'), rect(x - 6, 260, x + 6, GY))
+    sc = []
+    for x in range(360, 930, 52):
+        sc.append((x, 250, x, GY))
+    for y in range(250, GY, 52):
+        sc.append((360, y, 920, y))
+    paint(img, C('#5a6470'), lines(sc, 3), .9)
+    paint(img, C('#2a8a4a'), rect(360, 250, 380, GY), .5)
+    # 철근 더미 + 바닥
+    paint(img, F('#b89a70') * tex(1410, 25)[..., None], rect(0, GY - 10, W, H))
+    paint(img, C('#7a3e26'), lines([(80 + i * 6, 800, 360 + i * 6, 780) for i in range(12)], 3))
+    # 온도 전광판 + 급수대
+    paint(img, C('#5a5f66'), rect(1030, 470, 1040, GY))
+    paint(img, C('#111'), rect(950, 380, 1120, 480))
+    text(img, '폭염경보', 1035, 405, 24, '#ff5a3a', glowk=.5); text(img, '체감 37℃', 1035, 450, 34, '#ffd400', glowk=.6)
+    paint(img, C('#2a7ad8'), rect(80, 640, 150, 740)); paint(img, C('#e8e8e8'), rect(92, 610, 138, 642))
+    text(img, '급수대', 115, 760, 20, '#3a2a1a')
+    people(img, [470, 520, 760], GY, col='#e07a1a', s=1.1, seed=2)
+    img[:] = displace_x(img, 1.4, .08, 560, H, 14)
+    paint(img, C('#fff2d0'), smooth(.72, .9, noise(30, 3, 1420, sy=10)) * np.clip((YY - 580) / 200, 0, 1), .22)
+    return finish(img, .22, .012, warm=(1.04, 1.0, .93))
+
+
+# ------------------------------------------------------------------ 동네 단톡방 소문 (v3)
+def neighborhood():
+    img = sky([(0, '#4a7a8a'), (.6, '#94bcc0'), (1, '#c8dcd6')])
+    apartment(img, 60, 160, 420, '#d8d2c4', 9, 3, .3, 1500, lit='#fff0c8', dark='#7a92a2', number='101', numcol='#8a8478', rail='#b8b2a4', k=.15)
+    apartment(img, 780, 200, 1140, '#d0cabc', 8, 3, .3, 1501, lit='#fff0c8', dark='#7a92a2', number='102', numcol='#8a8478', rail='#b8b2a4', k=.15)
+    depth(img, 1.2)
+    # 동네 마트
+    paint(img, F('#efe8dc'), rect(430, 470, 770, GY))
+    paint(img, C('#2a8a5a'), rect(430, 470, 770, 530)); text(img, 'OO마트', 600, 500, 40, '#ffffff')
+    paint(img, F('#9ac4d8') * .9, rect(450, 560, 750, GY))
+    paint(img, C('#ffffff'), rect(520, 590, 680, 690))
+    text(img, '방역 소독 완료', 600, 620, 20, '#1d6a3a'); text(img, '정상 영업합니다', 600, 655, 18, '#333333')
+    paint(img, F('#8a8f96') * tex(1510, 30)[..., None], rect(0, GY, W, H))
+    # 단톡방 말풍선 (소문)
+    for i, (x, y, t, col) in enumerate([(250, 110, '확진자 누구래?', '#fff8c8'), (600, 80, '동선 받았어요!', '#ffffff'), (930, 120, '그 마트 가지 마세요', '#fff8c8'), (420, 250, '진짜예요?', '#ffffff')]):
+        w = len(t) * 22 + 40
+        paint(img, C(col), rect(x - w / 2, y - 28, x + w / 2, y + 28), .95)
+        paint(img, C(col), poly([(x - 10, y + 26), (x + 10, y + 26), (x - 4, y + 44)]), .95)
+        text(img, t, x, y, 22, '#333333')
+    people(img, [200, 250, 960, 1010, 1060], 860, col='#3a4a5a', s=1.2, seed=9)
+    return finish(img, .22, .012)
+
+
+SCENES.update(office=office, construction=construction, neighborhood=neighborhood)
+
+
 if __name__ == '__main__':
     names = sys.argv[2:] or list(SCENES)
     for n in names:
