@@ -588,30 +588,195 @@ function npcAvatar(n,mood){
   return avatar({g:/(순자|미영|말순|지민|수진|하나|복례|옥희|지수|서윤)/.test(n.n)?'f':'m',
     main:n.shirt,trim:'#fff',hat:'',pants:'#3a3f52',kind:null,hair:n.hair,mood,old:n.old});
 }
+/* ===================== 재난 현장 배경 (자체 제작 일러스트 · © KOREA CONTENTS LAB) =====================
+   viewBox 400×300, 지면선 y=250. 핵심 요소는 화면 가운데(x 110~290)에 두어 캐릭터·자막에 가리지 않게 배치 */
 function sceneSVG(d,id){
-  const [a,b]=D[d].sky; const g='g'+id;
-  const city=`<g fill="rgba(10,12,24,.55)"><rect x="0" y="80" width="46" height="120"/><rect x="50" y="56" width="38" height="144"/><rect x="92" y="96" width="30" height="104"/><rect x="262" y="70" width="44" height="130"/><rect x="310" y="40" width="40" height="160"/><rect x="354" y="88" width="46" height="112"/></g>
-  <g fill="rgba(255,226,140,.35)"><rect x="58" y="66" width="6" height="7"/><rect x="72" y="66" width="6" height="7"/><rect x="58" y="84" width="6" height="7"/><rect x="318" y="52" width="6" height="7"/><rect x="334" y="70" width="6" height="7"/><rect x="270" y="84" width="6" height="7"/></g>`;
-  const ground=`<rect x="0" y="178" width="400" height="22" fill="rgba(0,0,0,.35)"/>`;
-  let fx='';
-  if(d==='flood') fx=`<g><path class="wave" d="M-40 168 Q-20 160 0 168 T40 168 T80 168 T120 168 T160 168 T200 168 T240 168 T280 168 T320 168 T360 168 T400 168 T440 168 V200 H-40Z" fill="rgba(70,140,200,.75)"/><path class="wave2" d="M-40 176 Q-20 170 0 176 T40 176 T80 176 T120 176 T160 176 T200 176 T240 176 T280 176 T320 176 T360 176 T400 176 T440 176 V200 H-40Z" fill="rgba(40,100,170,.85)"/></g>${[...Array(26)].map((_,i)=>`<line x1="${i*16+4}" y1="${(i*37)%60}" x2="${i*16}" y2="${(i*37)%60+14}" stroke="rgba(200,220,255,.4)" stroke-width="1.4"/>`).join('')}`;
-  if(d==='fire') fx=`<g class="flick">${[[300,60],[330,40],[275,72],[60,58],[80,52]].map(([x,y])=>`<path d="M${x} ${y+30} Q${x-12} ${y+8} ${x} ${y-14} Q${x+12} ${y+8} ${x} ${y+30}Z" fill="#ff7a1a"/><path d="M${x} ${y+30} Q${x-6} ${y+14} ${x} ${y+2} Q${x+6} ${y+14} ${x} ${y+30}Z" fill="#ffd34d"/>`).join('')}</g><g fill="rgba(60,40,40,.5)"><circle class="smoke" cx="320" cy="20" r="22"/><circle class="smoke" cx="70" cy="30" r="18"/></g>`;
-  if(d==='quake') fx=`<path d="M150 178 L170 186 L160 192 L185 200" stroke="#1a1520" stroke-width="3" fill="none"/><path d="M230 178 L220 188 L240 194" stroke="#1a1520" stroke-width="3" fill="none"/><g fill="rgba(200,180,160,.5)"><rect x="96" y="160" width="10" height="7" transform="rotate(20 100 163)"/><rect x="280" y="164" width="12" height="8" transform="rotate(-15 286 168)"/></g>`;
-  if(d==='blast') fx=`<g><rect x="290" y="96" width="70" height="82" fill="rgba(30,25,25,.8)"/><rect x="340" y="50" width="12" height="50" fill="rgba(30,25,25,.8)"/></g><g fill="rgba(25,20,20,.7)"><circle class="smoke" cx="346" cy="40" r="20"/><circle class="smoke" cx="330" cy="22" r="26"/><circle class="smoke" cx="360" cy="14" r="18"/></g><circle class="flash" cx="316" cy="110" r="16" fill="#ffb347"/>`;
-  if(d==='heat') fx=`<circle cx="320" cy="44" r="30" fill="#fff4c2"/><circle cx="320" cy="44" r="42" fill="rgba(255,244,194,.35)"/>${[0,1,2].map(i=>`<path class="haze" d="M${40+i*110} 150 q10 -8 20 0 t20 0 t20 0 t20 0" stroke="rgba(255,255,255,.5)" stroke-width="2" fill="none"/>`).join('')}`;
-  if(d==='collapse') fx=`<g fill="rgba(70,66,76,.95)"><path d="M140 178 L160 140 L190 150 L200 120 L240 132 L250 178Z"/><rect x="170" y="128" width="40" height="8" transform="rotate(-20 190 132)"/></g><g fill="rgba(170,160,150,.35)"><circle class="smoke" cx="195" cy="110" r="24"/><circle class="smoke" cx="170" cy="120" r="16"/></g><path d="M120 178 L140 165 L150 178" fill="rgba(90,86,96,.9)"/>`;
-  if(d==='virus') fx=[[60,40],[150,24],[230,56],[330,30],[110,90]].map(([x,y],i)=>`<g class="float" style="animation-delay:${i*.6}s"><circle cx="${x}" cy="${y}" r="9" fill="rgba(130,230,200,.35)" stroke="rgba(130,230,200,.7)"/>${[0,60,120,180,240,300].map(r=>`<line x1="${x}" y1="${y}" x2="${x+14*Math.cos(r*Math.PI/180)}" y2="${y+14*Math.sin(r*Math.PI/180)}" stroke="rgba(130,230,200,.6)" stroke-width="1.5"/>`).join('')}</g>`).join('');
-  return `<svg class="bg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
-  <rect width="400" height="200" fill="url(#${g})"/>${city}${ground}${fx}</svg>`;
+  const P='s'+id+'_', GY=250;
+  let seed=11+d.length*97+id.length*13;
+  const R=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const lg=(g,stops,x2=0,y2=1)=>`<linearGradient id="${P}${g}" x1="0" y1="0" x2="${x2}" y2="${y2}">${stops.map(([o,c,a])=>`<stop offset="${o}" stop-color="${c}"${a!=null?` stop-opacity="${a}"`:''}/>`).join('')}</linearGradient>`;
+  const rg=(g,stops,cx=.5,cy=.5,r=.5)=>`<radialGradient id="${P}${g}" cx="${cx}" cy="${cy}" r="${r}">${stops.map(([o,c,a])=>`<stop offset="${o}" stop-color="${c}"${a!=null?` stop-opacity="${a}"`:''}/>`).join('')}</radialGradient>`;
+  const u=g=>`url(#${P}${g})`;
+  const wins=(x,y,w,h,cols,rows,{on='#ffd98a',off='rgba(0,0,0,.4)',p=.4,m=4}={})=>{
+    let s='';const cw=(w-m*(cols+1))/cols,ch=(h-m*(rows+1))/rows;
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)s+=`<rect x="${(x+m+c*(cw+m)).toFixed(1)}" y="${(y+m+r*(ch+m)).toFixed(1)}" width="${cw.toFixed(1)}" height="${ch.toFixed(1)}" fill="${R()<p?on:off}"/>`;
+    return s;
+  };
+  const block=(x,top,w,body,o={})=>`<rect x="${x}" y="${top}" width="${w}" height="${GY-top+2}" fill="${body}"/>`+wins(x,top+(o.t||6),w,GY-top-(o.t||6)-(o.b||10),o.cols||Math.max(2,Math.round(w/16)),o.rows||Math.max(2,Math.round((GY-top)/18)),o);
+  const rainLines=(color,n=46,len=16,dx=-4)=>{let s='';for(let i=0;i<n;i++){const x=R()*420-10,y0=R()*60;for(let r=-1;r<5;r++){const y=y0+r*60;s+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+dx).toFixed(1)}" y2="${(y+len).toFixed(1)}"/>`;}}return `<g class="rain" stroke="${color}" stroke-width="1.1" stroke-linecap="round">${s}</g>`;};
+  const wheel=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#141414"/><circle cx="${x}" cy="${y}" r="${r*.45}" fill="#9aa3ad"/>`;
+  const K='font-family="Noto Sans KR,Apple SD Gothic Neo,Malgun Gothic,sans-serif" font-weight="700"';
+  let defs='',body='';
+
+  if(d==='flood'){
+    defs=lg('sky',[[0,'#0c1729'],[.6,'#1d3352'],[1,'#2d4a6c']])+lg('water',[[0,'#3d6f99',.9],[1,'#132c48',.97]])+lg('cone',[[0,'#ffe9a8',.55],[1,'#ffe9a8',0]]);
+    body=`<rect width="400" height="300" fill="${u('sky')}"/>
+    <g fill="#08111f" opacity=".9"><ellipse cx="60" cy="18" rx="90" ry="26"/><ellipse cx="190" cy="10" rx="110" ry="24"/><ellipse cx="340" cy="20" rx="100" ry="28"/></g>
+    <path class="bolt" d="M286 0 L272 40 L284 40 L262 92" stroke="#dbe9ff" stroke-width="2.4" fill="none" stroke-linejoin="round"/>
+    <g>${block(0,96,70,'#14223a',{p:.25,cols:4})}${block(74,80,58,'#172843',{p:.3,cols:3})}${block(300,88,100,'#14223a',{p:.25,cols:5})}</g>
+    <g>
+      <rect x="22" y="150" width="112" height="102" fill="#2b3d58"/><rect x="18" y="144" width="120" height="8" fill="#3a4f6e"/>${wins(26,156,104,58,4,2,{p:.55,on:'#ffd27a'})}
+      <rect x="146" y="128" width="128" height="124" fill="#33486a"/><rect x="142" y="122" width="136" height="8" fill="#435c80"/>${wins(150,134,120,84,4,3,{p:.5,on:'#ffd27a'})}
+      <rect x="284" y="152" width="110" height="100" fill="#2b3d58"/><rect x="280" y="146" width="118" height="8" fill="#3a4f6e"/>${wins(288,158,102,58,4,2,{p:.45,on:'#ffd27a'})}
+      ${[34,72,110,162,200,238,296,334,372].map(x=>`<rect x="${x-14}" y="230" width="22" height="14" fill="#0d1a2c" stroke="#5b7396" stroke-width="1.5"/>`).join('')}
+      <text x="210" y="226" text-anchor="middle" font-size="7" fill="#b9c8de" ${K}>반지하 주택가</text>
+    </g>
+    <g><rect x="318" y="118" width="4" height="132" fill="#4b5563"/><path d="M320 120 Q320 110 334 110 L346 110" stroke="#4b5563" stroke-width="4" fill="none"/><rect x="340" y="108" width="16" height="6" rx="2" fill="#cbd5e1"/><polygon points="342,114 354,114 380,250 316,250" fill="${u('cone')}"/></g>
+    <g transform="translate(118 196)"><rect x="-1.5" y="10" width="3" height="44" fill="#6b7280"/><polygon points="0,-14 16,2 0,18 -16,2" fill="#ffd400" stroke="#111" stroke-width="2"/><text x="0" y="5.5" text-anchor="middle" font-size="7.5" fill="#111" ${K}>침수</text></g>
+    <g transform="translate(160 206)"><path d="M0 34 L6 18 Q10 10 22 10 L52 10 Q62 10 68 18 L78 30 L80 34 Z" fill="#c33d3d"/><path d="M14 20 L22 12 L50 12 L58 20 Z" fill="#1d2a3a"/><circle cx="76" cy="30" r="3" fill="#fff4b0"/></g>
+    <g class="bob" transform="translate(262 228)"><rect x="0" y="0" width="14" height="10" fill="#b08654" transform="rotate(-12)"/></g>
+    <g class="bob" style="animation-delay:.8s"><circle cx="100" cy="246" r="7" fill="none" stroke="#151515" stroke-width="4"/></g>
+    <rect x="0" y="232" width="400" height="68" fill="${u('water')}"/>
+    <path class="wave" d="M-40 234 q10 -5 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 V300 H-40Z" fill="#4b7fab" opacity=".55"/>
+    <g fill="#ffe9a8" opacity=".18"><rect x="336" y="240" width="10" height="50"/><rect x="226" y="240" width="5" height="30"/><rect x="60" y="240" width="5" height="26"/></g>
+    <path class="wave2" d="M-40 252 q10 -4 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0" stroke="#9cc3e6" stroke-width="1.2" fill="none" opacity=".6"/>
+    ${rainLines('rgba(200,222,255,.45)')}`;
+  }
+
+  if(d==='fire'){
+    defs=lg('sky',[[0,'#0f070c'],[.55,'#3a1210'],[1,'#8a3214']])+rg('glow',[[0,'#ff9a3a',.75],[1,'#ff6a1a',0]])+lg('road',[[0,'#3a1c16'],[1,'#120a0b']])+lg('flame',[[0,'#fff2a8'],[.45,'#ffb22e'],[1,'#e8481a']],0,1);
+    body=`<rect width="400" height="300" fill="${u('sky')}"/>
+    <ellipse cx="200" cy="140" rx="170" ry="120" fill="${u('glow')}"/>
+    <g fill="#140a0d">${[[0,120,60],[62,140,40],[330,110,70]].map(([x,t,w])=>`<rect x="${x}" y="${t}" width="${w}" height="${GY-t}"/>`).join('')}</g>
+    ${block(40,112,86,'#24161a',{p:.18,on:'#ffcf7a',cols:4})}${block(276,96,96,'#24161a',{p:.18,on:'#ffcf7a',cols:4})}
+    <g class="smoke"><path d="M150 52 C110 20 120 -10 170 -6 C190 -30 250 -26 262 0 C300 -4 312 30 280 52 Z" fill="#1c1517" opacity=".92"/><circle cx="214" cy="20" r="34" fill="#2a2023" opacity=".85"/></g>
+    <rect x="148" y="46" width="112" height="206" fill="#3a2b2f"/><rect x="144" y="40" width="120" height="8" fill="#4a3a3e"/>
+    ${Array.from({length:11},(_,f)=>{const y=54+f*18,burn=f>=3&&f<=5;return `<rect x="148" y="${y+13}" width="112" height="3" fill="#56464a"/>`+[0,1,2,3].map(c=>`<rect x="${154+c*26}" y="${y}" width="20" height="11" fill="${burn&&!(f===5&&c===0)?'#ff8a2a':(R()<.25?'#ffcf7a':'#1a1214')}"/>`).join('')}).join('')}
+    <g class="flick">${[[164,112],[190,128],[216,112],[242,128],[190,146],[242,146],[216,96]].map(([x,y],i)=>`<path d="M${x} ${y+16} C${x-12} ${y+4} ${x-6} ${y-12} ${x} ${y-24} C${x+3} ${y-12} ${x+12} ${y-6} ${x+9} ${y+16} Z" fill="${u('flame')}" opacity="${.95-i*.04}"/>`).join('')}</g>
+    <text x="204" y="242" text-anchor="middle" font-size="7" fill="#d9b9a8" ${K}>OO아파트 103동</text>
+    <g class="ember" fill="#ffb347">${[150,178,206,232,256,190,222].map((x,i)=>`<circle cx="${x}" cy="${150-i*6}" r="${1.2+R()*1.2}" style="animation-delay:${(i*.45).toFixed(2)}s"/>`).join('')}</g>
+    <rect x="0" y="${GY}" width="400" height="50" fill="${u('road')}"/>
+    <g fill="#ff8a2a" opacity=".22"><rect x="150" y="${GY}" width="110" height="40"/></g>
+    <g transform="translate(-26 0)">
+      <line x1="300" y1="206" x2="236" y2="132" stroke="#c9ced6" stroke-width="3"/><line x1="308" y1="208" x2="244" y2="134" stroke="#c9ced6" stroke-width="3"/>
+      ${Array.from({length:9},(_,i)=>{const t=i/9;const x1=300-64*t,y1=206-74*t;return `<line x1="${x1}" y1="${y1}" x2="${x1+8}" y2="${y1+2}" stroke="#c9ced6" stroke-width="2"/>`}).join('')}
+      <path class="spray" d="M238 132 Q220 104 212 116" stroke="#d8eeff" stroke-width="3" fill="none" stroke-dasharray="4 4" opacity=".85"/>
+      <path d="M262 246 L262 216 L330 216 L330 206 L352 206 Q366 206 370 220 L374 246 Z" fill="#c8202a"/><rect x="262" y="228" width="112" height="5" fill="#f2f2f2"/>
+      <path d="M338 210 L352 210 Q362 210 365 222 L338 222Z" fill="#9fd0ef"/><text x="296" y="226" text-anchor="middle" font-size="9" fill="#fff" ${K}>119</text>
+      <rect class="siren" x="336" y="200" width="14" height="6" rx="2" fill="#ff3b3b"/><rect class="siren2" x="320" y="200" width="14" height="6" rx="2" fill="#3b7bff"/>
+      ${wheel(282,248,8)}${wheel(352,248,8)}
+    </g>`;
+  }
+
+  if(d==='quake'){
+    defs=lg('sky',[[0,'#1f1c2a'],[.7,'#544762'],[1,'#7a6a72']])+lg('road',[[0,'#3a3540'],[1,'#1e1b22']]);
+    body=`<rect width="400" height="300" fill="${u('sky')}"/>
+    <g fill="#d9c8b0" opacity=".14"><ellipse cx="120" cy="190" rx="140" ry="40"/><ellipse cx="300" cy="170" rx="130" ry="40"/></g>
+    <g transform="rotate(-4 70 250)">${block(10,92,112,'#3a3442',{p:.3,on:'#f0d79a',cols:5})}<path d="M40 100 L52 130 L44 150 L60 190 L50 230" stroke="#120f16" stroke-width="2.5" fill="none"/></g>
+    <g transform="rotate(3 340 250)">${block(282,72,112,'#3f3848',{p:.3,on:'#f0d79a',cols:5})}<path d="M350 80 L338 120 L352 140 L336 180" stroke="#120f16" stroke-width="2.5" fill="none"/></g>
+    <rect x="128" y="150" width="148" height="102" fill="#4a4254"/><rect x="124" y="144" width="156" height="8" fill="#5b5266"/>${wins(132,174,140,48,5,2,{p:.35,on:'#f0d79a'})}
+    <g transform="rotate(14 150 160)"><rect x="132" y="152" width="60" height="18" fill="#2f7fd6"/><text x="162" y="165" text-anchor="middle" font-size="10" fill="#fff" ${K}>상 가</text></g>
+    <path d="M128 152 L150 168 L136 190" stroke="#120f16" stroke-width="2" fill="none"/><path d="M262 152 L250 176 L268 200 L254 230" stroke="#120f16" stroke-width="2" fill="none"/>
+    <g transform="rotate(12 214 250)"><rect x="211" y="110" width="6" height="140" fill="#6b5b4b"/><rect x="196" y="120" width="36" height="4" fill="#6b5b4b"/><rect x="200" y="132" width="28" height="3" fill="#6b5b4b"/><rect x="218" y="140" width="10" height="16" rx="3" fill="#8b9097"/></g>
+    <g stroke="#120f16" stroke-width="1.2" fill="none"><path d="M0 128 Q100 150 196 126"/><path d="M0 136 Q110 160 200 132"/><path d="M228 118 Q320 150 400 120"/></g>
+    <rect x="0" y="${GY}" width="400" height="50" fill="${u('road')}"/>
+    ${[20,80,140,260,320,380].map(x=>`<rect x="${x}" y="272" width="26" height="3" fill="#d8d0c0" opacity=".6"/>`).join('')}
+    <path d="M110 262 L150 254 L170 270 L200 258 L226 276 L262 260 L300 272 L262 268 L226 284 L198 268 L170 280 L148 264 Z" fill="#0b090d"/>
+    <path d="M150 254 L170 270 L200 258" stroke="#8a7f8e" stroke-width="2" fill="none"/>
+    <g fill="#9a5c46">${[[130,238],[142,242],[156,240],[136,246],[150,248],[166,246],[146,232]].map(([x,y],i)=>`<rect x="${x}" y="${y}" width="12" height="6" transform="rotate(${(i*23)%40-20} ${x+6} ${y+3})"/>`).join('')}</g>
+    <g class="fall" fill="#b8aeb8">${[[180,90],[236,70],[160,40]].map(([x,y],i)=>`<rect x="${x}" y="${y}" width="6" height="5" style="animation-delay:${i*.7}s"/>`).join('')}</g>
+    <g transform="translate(296 180)"><rect x="18" y="20" width="3" height="50" fill="#6b7280"/><rect x="0" y="0" width="42" height="22" rx="3" fill="#1f8a4c"/><text x="21" y="11" text-anchor="middle" font-size="7" fill="#fff" ${K}>대피소</text><text x="21" y="19" text-anchor="middle" font-size="7" fill="#fff" ${K}>→ 200m</text></g>`;
+  }
+
+  if(d==='blast'){
+    defs=lg('sky',[[0,'#241a18'],[.6,'#5a3c2c'],[1,'#a8683a']])+rg('ball',[[0,'#fff6c8'],[.35,'#ffc247'],[.7,'#ef5a1d'],[1,'#5a2418',.9]])+lg('ground',[[0,'#4a3b31'],[1,'#231b17']]);
+    body=`<rect width="400" height="300" fill="${u('sky')}"/>
+    <g fill="#2c211d"><rect x="20" y="96" width="14" height="110"/><rect x="44" y="120" width="10" height="86"/><rect x="350" y="104" width="14" height="102"/></g>
+    <g fill="#3b2c26" opacity=".85"><circle class="smoke" cx="27" cy="82" r="14"/><circle class="smoke" cx="357" cy="90" r="16"/></g>
+    <g class="mush"><path d="M232 210 C226 170 236 150 228 120 L272 120 C264 150 274 170 268 210 Z" fill="#3a2a24"/>
+      <ellipse cx="250" cy="96" rx="78" ry="34" fill="#2e2320" opacity=".95"/><circle cx="208" cy="90" r="28" fill="#3a2b26"/><circle cx="292" cy="90" r="30" fill="#3a2b26"/><circle cx="250" cy="70" r="34" fill="#45332c"/></g>
+    <circle class="flash" cx="250" cy="178" r="56" fill="${u('ball')}"/>
+    <ellipse class="shock" cx="250" cy="186" rx="80" ry="22" fill="none" stroke="#fff3cf" stroke-width="2.5"/>
+    <g fill="#1f1714">${[[180,130,-30],[316,124,25],[200,96,-10],[300,150,40],[150,160,-50]].map(([x,y,r],i)=>`<polygon class="shard" style="animation-delay:${i*.2}s" points="${x},${y} ${x+8},${y+3} ${x+3},${y+9}" transform="rotate(${r} ${x} ${y})"/>`).join('')}</g>
+    <g><circle cx="70" cy="186" r="28" fill="#c9c2b8"/><path d="M48 178 Q70 170 92 178" stroke="#a69e94" stroke-width="2" fill="none"/>${[52,64,76,88].map(x=>`<rect x="${x-1.5}" y="208" width="3" height="40" fill="#8a8178"/>`).join('')}
+      <rect x="110" y="168" width="44" height="80" fill="#b9b2a8"/><ellipse cx="132" cy="168" rx="22" ry="6" fill="#cfc8be"/><rect x="110" y="188" width="44" height="3" fill="#8a8178"/><rect x="110" y="212" width="44" height="3" fill="#8a8178"/>
+      <rect x="0" y="214" width="400" height="5" fill="#6d5f55"/><rect x="0" y="224" width="400" height="4" fill="#5a4d45"/></g>
+    <rect x="0" y="${GY}" width="400" height="50" fill="${u('ground')}"/>
+    <g stroke="#7a6d63" stroke-width="1.6">${Array.from({length:41},(_,i)=>`<line x1="${i*10}" y1="232" x2="${i*10}" y2="${GY}"/>`).join('')}<line x1="0" y1="234" x2="400" y2="234"/></g>
+    <g transform="translate(160 214)"><rect x="0" y="0" width="64" height="30" fill="#f4f1ea" stroke="#c0392b" stroke-width="2"/><polygon points="14,4 24,22 4,22" fill="#ffd400" stroke="#111" stroke-width="1.2"/><text x="14" y="20" text-anchor="middle" font-size="10" fill="#111" ${K}>!</text><text x="44" y="13" text-anchor="middle" font-size="8" fill="#c0392b" ${K}>위험</text><text x="44" y="24" text-anchor="middle" font-size="6.5" fill="#c0392b" ${K}>출입금지</text></g>
+    <g fill="#cfe3ef" opacity=".55">${[[120,262],[136,270],[300,266],[318,276],[210,280]].map(([x,y])=>`<polygon points="${x},${y} ${x+5},${y+2} ${x+1},${y+5}"/>`).join('')}</g>`;
+  }
+
+  if(d==='heat'){
+    defs=lg('sky',[[0,'#ff8326'],[.55,'#ffbd45'],[1,'#ffe7a3']])+rg('sun',[[0,'#fffbe6'],[.6,'#fff1b0'],[1,'#ffd36b',0]])+lg('road',[[0,'#7a6a60'],[1,'#4a3e38']]);
+    body=`<rect width="400" height="300" fill="${u('sky')}"/>
+    <circle cx="200" cy="64" r="70" fill="${u('sun')}"/>
+    <g class="spin" style="transform-origin:200px 64px" fill="#fff3c4" opacity=".55">${Array.from({length:12},(_,i)=>`<polygon points="200,6 205,30 195,30" transform="rotate(${i*30} 200 64)"/>`).join('')}</g>
+    <circle cx="200" cy="64" r="26" fill="#fffdf0"/>
+    <g opacity=".55">${block(0,104,64,'#d98c4c',{p:.5,on:'#ffe0a8',off:'#c27a40',cols:3})}${block(330,96,70,'#d98c4c',{p:.5,on:'#ffe0a8',off:'#c27a40',cols:3})}</g>
+    <g stroke="#7a4b2a" stroke-width="1.6" fill="none" opacity=".7"><path d="M70 250 L70 70 M80 250 L80 70"/>${Array.from({length:18},(_,i)=>`<path d="M70 ${74+i*10} L80 ${79+i*10}"/>`).join('')}<path d="M40 70 L170 70 M60 62 L75 62 L75 70"/><path d="M140 70 L140 100"/></g>
+    <g><rect x="198" y="150" width="5" height="100" fill="#5a5f66"/>
+      <rect x="138" y="106" width="124" height="52" rx="4" fill="#141414" stroke="#3a3a3a" stroke-width="3"/>
+      <text x="200" y="124" text-anchor="middle" font-size="11" fill="#ff5a3a" ${K}>폭염경보 발령</text>
+      <text x="200" y="150" text-anchor="middle" font-size="22" fill="#ffd400" ${K}>37℃</text></g>
+    <g transform="translate(318 152)"><rect x="0" y="0" width="64" height="18" rx="3" fill="#1d5fb8"/><text x="32" y="12.5" text-anchor="middle" font-size="8" fill="#fff" ${K}>무더위쉼터</text></g>
+    <g><path d="M112 250 L112 196" stroke="#6b4a2a" stroke-width="6"/><path d="M84 200 Q112 160 140 200 Q126 196 112 210 Q98 196 84 200Z" fill="#8a9a44"/><path d="M92 196 Q100 214 96 222 M132 196 Q124 214 128 222" stroke="#8a9a44" stroke-width="4" fill="none"/></g>
+    <g><rect x="290" y="186" width="3" height="64" fill="#e8e8e8"/><path d="M252 192 Q291 160 330 192 Z" fill="#2f8a4a"/><path d="M252 192 L330 192" stroke="#1f6a36" stroke-width="2"/><path d="M271 192 Q291 168 291 166 Q291 168 311 192" stroke="#e8f5e8" stroke-width="1.4" fill="none"/><ellipse cx="291" cy="${GY+4}" rx="40" ry="5" fill="#2a1e18" opacity=".35"/></g>
+    <rect x="0" y="${GY}" width="400" height="50" fill="${u('road')}"/>
+    <g fill="#f4efe6" opacity=".85">${Array.from({length:9},(_,i)=>`<rect x="${110+i*20}" y="258" width="11" height="34"/>`).join('')}</g>
+    <g class="haze" stroke="#fff6dc" stroke-width="1.6" fill="none" opacity=".6">${[60,170,280].map(x=>`<path d="M${x} 244 q8 -6 16 0 t16 0 t16 0 t16 0"/>`).join('')}${[110,230].map(x=>`<path d="M${x} 214 q8 -6 16 0 t16 0 t16 0"/>`).join('')}</g>`;
+  }
+
+  if(d==='collapse'){
+    defs=lg('sky',[[0,'#2a2c35'],[.7,'#6a6c76'],[1,'#8e8f97']])+lg('beam',[[0,'#fffbe8',.6],[1,'#fffbe8',0]],1,0)+lg('ground',[[0,'#55524f'],[1,'#2a2826']]);
+    body=`<rect width="400" height="300" fill="${u('sky')}"/>
+    <g fill="#40424c">${[[0,100,70],[300,90,100]].map(([x,t,w])=>`<rect x="${x}" y="${t}" width="${w}" height="${GY-t}"/>`).join('')}</g>
+    ${wins(0,106,70,130,3,6,{p:.2,on:'#c9c4a8',off:'#34363e'})}${wins(300,96,100,140,4,7,{p:.2,on:'#c9c4a8',off:'#34363e'})}
+    <rect x="118" y="66" width="74" height="186" fill="#8d8780"/>
+    ${Array.from({length:9},(_,f)=>`<rect x="118" y="${70+f*20}" width="74" height="4" fill="#a9a39b"/><rect x="122" y="${75+f*20}" width="66" height="14" fill="#2a2726"/>`).join('')}
+    <g stroke="#7a3f2a" stroke-width="1.4">${[90,110,130,150].map(y=>`<line x1="192" y1="${y}" x2="204" y2="${y-4}"/><line x1="192" y1="${y+3}" x2="202" y2="${y+6}"/>`).join('')}</g>
+    <g><polygon points="192,150 300,206 300,214 192,158" fill="#9b958d"/><polygon points="192,174 296,222 296,230 192,182" fill="#8a847c"/><polygon points="192,198 310,236 310,244 192,206" fill="#a39d95"/>
+      <polygon class="sway" points="196,90 250,140 246,146 192,98" fill="#9b958d" style="transform-origin:196px 92px"/></g>
+    <path d="M90 252 L120 214 L150 226 L176 200 L214 220 L240 206 L276 226 L312 214 L338 252 Z" fill="#6f6a64"/>
+    <g fill="#8d877f">${[[124,226,16],[160,214,14],[200,226,18],[236,218,12],[268,232,16],[146,240,12],[300,236,14]].map(([x,y,s],i)=>`<polygon points="${x},${y} ${x+s},${y+2} ${x+s-3},${y+s*.6} ${x-2},${y+s*.5}" transform="rotate(${i*17%30-15} ${x} ${y})"/>`).join('')}</g>
+    <g stroke="#6e3a26" stroke-width="1.3">${[[150,222,140,210],[210,218,216,204],[256,224,266,212]].map(([a,b,c,e])=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${e}"/>`).join('')}</g>
+    <g fill="#cfc6b6" opacity=".35"><circle class="smoke" cx="220" cy="196" r="26"/><circle class="smoke" cx="170" cy="204" r="18" style="animation-delay:1.2s"/><circle class="smoke" cx="268" cy="200" r="20" style="animation-delay:.6s"/></g>
+    <polygon points="94,150 210,214 230,206" fill="${u('beam')}"/><g><rect x="84" y="144" width="14" height="10" rx="2" fill="#e5e7eb"/><path d="M91 154 L84 190 M91 154 L98 190 M91 154 L91 190" stroke="#6b7280" stroke-width="2"/></g>
+    <g transform="translate(316 196)"><path d="M0 40 L0 22 L30 22 L30 8 L48 8 L52 22 L60 22 L60 40 Z" fill="#f2b705"/><rect x="34" y="11" width="12" height="10" fill="#9fd0ef"/><path d="M30 18 L6 -14 L-22 6" stroke="#e0a400" stroke-width="5" fill="none" stroke-linejoin="round"/><path d="M-22 6 L-32 16 L-18 18 Z" fill="#555"/><rect x="-2" y="40" width="64" height="10" rx="5" fill="#2a2a2a"/></g>
+    <rect x="0" y="${GY}" width="400" height="50" fill="${u('ground')}"/>
+    <g transform="rotate(-3 200 238)"><rect x="-10" y="232" width="420" height="11" fill="#ffd400"/>${Array.from({length:7},(_,i)=>`<text x="${i*64}" y="240.5" font-size="7.5" fill="#111" ${K}>통제선 · 출입금지</text>`).join('')}</g>`;
+  }
+
+  if(d==='virus'){
+    defs=lg('sky',[[0,'#0f2a33'],[.7,'#2a6266'],[1,'#3f8580']])+lg('ground',[[0,'#3f4b4f'],[1,'#20292c']]);
+    const germ=(x,y,r,i)=>`<g class="float" style="animation-delay:${(i*.5).toFixed(1)}s"><circle cx="${x}" cy="${y}" r="${r}" fill="rgba(120,230,200,.28)" stroke="rgba(150,240,210,.75)" stroke-width="1.2"/>${Array.from({length:8},(_,k)=>{const a=k*Math.PI/4,x1=x+r*Math.cos(a),y1=y+r*Math.sin(a),x2=x+(r+5)*Math.cos(a),y2=y+(r+5)*Math.sin(a);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="rgba(150,240,210,.75)" stroke-width="1.3"/><circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="1.8" fill="rgba(150,240,210,.85)"/>`}).join('')}</g>`;
+    body=`<rect width="400" height="300" fill="${u('sky')}"/>
+    <g fill="#1d3a40">${[[0,110,50],[330,104,70]].map(([x,t,w])=>`<rect x="${x}" y="${t}" width="${w}" height="${GY-t}"/>`).join('')}</g>
+    <rect x="56" y="70" width="150" height="182" fill="#dfe7ea"/><rect x="52" y="64" width="158" height="8" fill="#c4d0d4"/>
+    ${wins(60,104,142,108,6,5,{p:.6,on:'#9cc7e0',off:'#6f93a6',m:5})}
+    <rect x="104" y="214" width="54" height="38" fill="#7fa9bf"/><line x1="131" y1="214" x2="131" y2="252" stroke="#dfe7ea" stroke-width="2"/>
+    <g transform="translate(131 86)"><rect x="-36" y="-12" width="72" height="22" rx="3" fill="#fff"/><rect x="-31" y="-7" width="12" height="12" fill="#fff"/><path d="M-27 -7 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 h4z" fill="#d62828"/><text x="8" y="4.5" text-anchor="middle" font-size="10" fill="#1d3a40" ${K}>OO병원</text></g>
+    <g><path d="M214 186 L276 150 L338 186 Z" fill="#f7fafb"/><rect x="220" y="186" width="112" height="64" fill="#eef3f5"/><rect x="220" y="232" width="112" height="18" fill="#2a63b8"/>
+      <rect x="250" y="196" width="52" height="54" fill="#33454c"/><rect x="246" y="230" width="60" height="8" fill="#c9d3d7"/>
+      <rect x="232" y="160" width="88" height="20" rx="3" fill="#1f5fbf"/><text x="276" y="174" text-anchor="middle" font-size="10" fill="#fff" ${K}>선별진료소</text></g>
+    <g transform="translate(150 218)"><path d="M0 30 L0 6 L44 6 L44 0 L60 0 Q70 0 72 14 L74 30 Z" fill="#f7f7f7"/><rect x="0" y="16" width="74" height="4" fill="#d62828"/><path d="M48 3 L60 3 Q66 3 68 12 L48 12Z" fill="#9fd0ef"/><text x="22" y="14" text-anchor="middle" font-size="7" fill="#d62828" ${K}>구급</text><rect class="siren" x="38" y="-4" width="8" height="4" fill="#ff3b3b"/><rect class="siren2" x="48" y="-4" width="8" height="4" fill="#3b7bff"/>${wheel(14,30,6)}${wheel(60,30,6)}</g>
+    <rect x="0" y="${GY}" width="400" height="50" fill="${u('ground')}"/>
+    <g fill="#ffd400" opacity=".85">${Array.from({length:6},(_,i)=>`<rect x="${226+i*18}" y="262" width="10" height="4" rx="1"/>`).join('')}</g>
+    <text x="270" y="282" text-anchor="middle" font-size="7" fill="#e6edf0" opacity=".85" ${K}>거리두기 1m</text>
+    ${[[40,40,8],[110,30,6],[250,40,9],[330,60,7],[180,120,5],[360,140,6],[24,150,5]].map(([x,y,r],i)=>germ(x,y,r,i)).join('')}`;
+  }
+
+  return `<svg class="bg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>${defs}</defs>${body}</svg>`;
 }
 const sceneCSS=document.createElement('style');
-sceneCSS.textContent=`.wave{animation:wv 3s linear infinite}.wave2{animation:wv 2.2s linear infinite reverse}@keyframes wv{to{transform:translateX(40px)}}
-.flick{animation:fl .5s ease-in-out infinite alternate;transform-origin:center bottom}@keyframes fl{to{opacity:.8;transform:scaleY(1.04)}}
-.smoke{animation:sm 4s ease-in-out infinite alternate}@keyframes sm{to{transform:translate(-6px,-6px)}}
-.flash{animation:fs 1.6s ease-in-out infinite}@keyframes fs{50%{opacity:.25}}
-.haze{animation:hz 2s ease-in-out infinite alternate}@keyframes hz{to{transform:translateY(-5px)}}
-.float{animation:flt 3s ease-in-out infinite alternate}@keyframes flt{to{transform:translateY(-8px)}}`;
+sceneCSS.textContent=`.bg .wave{animation:wv 3s linear infinite}.bg .wave2{animation:wv 2.2s linear infinite reverse}@keyframes wv{to{transform:translateX(40px)}}
+.bg .rain{animation:rn .55s linear infinite}@keyframes rn{from{transform:translateY(-60px)}to{transform:translateY(0)}}
+.bg .bolt{opacity:0;animation:bolt 6s infinite}@keyframes bolt{0%,88%,100%{opacity:0}89%,91%{opacity:1}90%{opacity:.2}}
+.bg .bob{animation:bob 2.4s ease-in-out infinite alternate}@keyframes bob{to{transform:translateY(-3px)}}
+.bg .flick{animation:fl .45s ease-in-out infinite alternate;transform-origin:204px 140px}@keyframes fl{to{opacity:.82;transform:scale(1.03,1.06)}}
+.bg .smoke{animation:sm 4s ease-in-out infinite alternate}@keyframes sm{to{transform:translate(-6px,-8px)}}
+.bg .ember circle{animation:em 2.6s linear infinite}@keyframes em{from{transform:translateY(0);opacity:1}to{transform:translateY(-70px);opacity:0}}
+.bg .siren{animation:sr .8s steps(1) infinite}.bg .siren2{animation:sr .8s steps(1) infinite reverse}@keyframes sr{50%{opacity:.15}}
+.bg .spray{animation:sp .5s linear infinite}@keyframes sp{to{stroke-dashoffset:-8}}
+.bg .fall{animation:fa 2.2s ease-in infinite}@keyframes fa{from{transform:translateY(0);opacity:1}to{transform:translateY(140px);opacity:0}}
+.bg .flash{animation:fs 1.6s ease-in-out infinite;transform-origin:250px 178px}@keyframes fs{50%{opacity:.8;transform:scale(1.08)}}
+.bg .shock{animation:sh 2s ease-out infinite;transform-origin:250px 186px}@keyframes sh{from{transform:scale(.6);opacity:.9}to{transform:scale(1.6);opacity:0}}
+.bg .shard{animation:shd 2s ease-out infinite;transform-box:fill-box}@keyframes shd{to{opacity:.2}}
+.bg .mush{animation:sm 5s ease-in-out infinite alternate}
+.bg .spin{animation:spin 30s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.bg .haze{animation:hz 2s ease-in-out infinite alternate}@keyframes hz{to{transform:translateY(-5px);opacity:.25}}
+.bg .sway{animation:sw 3s ease-in-out infinite alternate}@keyframes sw{to{transform:rotate(3deg)}}
+.bg .float{animation:flt 3s ease-in-out infinite alternate}@keyframes flt{to{transform:translateY(-8px)}}`;
 document.head.appendChild(sceneCSS);
 
 /* ===================== 상태 ===================== */
