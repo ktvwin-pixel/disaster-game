@@ -9,6 +9,7 @@
 - 자체 제작 배경음악과 판정 효과음(켜기/끄기 가능)
 - 인증번호 기반 랭킹: 운영자가 발급한 인증번호로 참여, 관문을 마칠 때마다 내 순위 표시
   - 랭킹만 바로 보기: https://ktvwin-pixel.github.io/disaster-game/#ranking
+  - 인증번호가 없으면 랭킹 화면에서 바로 신청 → 자동 발급(또는 운영자 승인 후 이메일 발송)
   - 랭킹 서버: `server/Code.gs` (구글 시트 + Apps Script)
 
 **플레이:** https://ktvwin-pixel.github.io/disaster-game/

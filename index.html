@@ -206,6 +206,16 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .codeform input{flex:1 1 180px;min-width:0;background:var(--night);border:1.5px solid var(--line);color:var(--ink);border-radius:10px;padding:12px;font-size:17px;font-family:var(--body);letter-spacing:.08em;text-transform:uppercase}
 .formmsg{font-size:13px;min-height:1.2em}
 .formmsg.err{color:var(--bad)} .formmsg.ok{color:var(--ok)}
+.applybox{display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
+.apform{display:grid;gap:10px}
+.apform label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.apform input[type=text],.apform input[type=email]{background:var(--night);border:1.5px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 12px;font-size:16px;font-family:var(--body);min-width:0}
+.apform .agree{display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:13px;line-height:1.5}
+.apform .agree input{width:20px;height:20px;flex:none;margin-top:1px;accent-color:var(--signal)}
+.apform .btn{justify-self:start}
+.notice{border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6}
+.notice.ok{background:rgba(62,213,152,.14);color:var(--ink);border:1px solid var(--ok)}
+.notice b{color:var(--signal);letter-spacing:.06em;font-size:17px}
 .rkstate{background:var(--panel);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
 .hint{background:var(--night);border-radius:10px;padding:8px 10px;font-size:13px}
 .hint ul{margin:4px 0 0;padding-left:18px}
@@ -833,7 +843,7 @@ document.addEventListener('visibilitychange',()=>{document.hidden?bgmStop():(P.s
 
 /* ===================== 랭킹 (인증번호 · 구글 시트 서버) ===================== */
 const RANK_API='https://script.google.com/macros/s/AKfycbwlW_lKSKZ7mS0_LpPy25Ri2saIdjmCT1nx2Du0eJ-RzbW13g7Xpj7C0ObZHfELw9f3Mg/exec';  // 랭킹 서버(Apps Script 웹 앱) 주소: https://script.google.com/macros/s/…/exec
-const RK={top:null,me:null,count:0,loading:false,err:'',meErr:'',back:'scrMap'};
+const RK={top:null,me:null,count:0,loading:false,err:'',meErr:'',back:'scrMap',notice:'',sig:'',applyOpen:false};
 let flushing=null;
 const ERRMSG={
   invalid:'등록되지 않은 인증번호입니다. 번호를 다시 확인하세요.',
@@ -841,7 +851,12 @@ const ERRMSG={
   noapi:'랭킹 서버를 준비하고 있습니다. 조금만 기다려 주세요.',
   network:'랭킹 서버에 연결하지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도하세요.',
   http:'랭킹 서버 응답이 올바르지 않아요. 잠시 후 다시 시도하세요.',
-  server:'랭킹 서버에서 오류가 났어요. 잠시 후 다시 시도하세요.'
+  server:'랭킹 서버에서 오류가 났어요. 잠시 후 다시 시도하세요.',
+  closed:'지금은 인증번호 신청을 받지 않습니다. 운영자에게 문의하세요.',
+  rejected:'이 이메일의 신청은 승인되지 않았습니다. 운영자에게 문의하세요.',
+  need_name:'이름을 입력하세요.',
+  bad_email:'이메일 주소를 다시 확인하세요.',
+  need_agree:'개인정보 수집·이용에 동의해 주세요.'
 };
 const errText=e=>ERRMSG[(e&&(e.code||e.error))]||ERRMSG.network;
 const fmtCode=c=>{const n=String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return n.length===11&&n.startsWith('KCL')?`KCL-${n.slice(3,7)}-${n.slice(7)}`:String(c||'').trim().toUpperCase();};
@@ -898,7 +913,7 @@ function gapTip(r){
   return'';
 }
 function joinCard(){
-  return`<div class="rankcard ghost"><div class="eyebrow">랭킹 참여</div><div class="line"><b>인증번호를 등록하면 내 순위가 보여요.</b></div><div class="tip">운영자에게 받은 인증번호(KCL-로 시작)를 등록하면 훈련 점수가 전국 랭킹에 반영됩니다.</div><button class="btn small" data-rank>인증번호 등록</button></div>`;
+  return`<div class="rankcard ghost"><div class="eyebrow">랭킹 참여</div><div class="line"><b>인증번호를 등록하면 내 순위가 보여요.</b></div><div class="tip">인증번호(KCL-로 시작)를 등록하면 훈련 점수가 랭킹에 반영됩니다. 번호가 없으면 랭킹 화면에서 바로 신청할 수 있어요.</div><button class="btn small" data-rank>인증번호 등록·신청</button></div>`;
 }
 function resultRank(pass,goods){
   const box=$('resRank');if(!box)return;
@@ -943,6 +958,7 @@ function openRank(){
   renderRank();loadRank();
 }
 function closeRank(){
+  RK.notice='';
   try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
   const to=RK.back==='scrResult'||RK.back==='scrMedal'||RK.back==='scrSetup'?RK.back:'scrMap';
   if(to==='scrMap')renderMap();
@@ -959,36 +975,99 @@ async function loadRank(){
   }catch(e){RK.err=errText(e);}
   RK.loading=false;renderRank();renderBanner();
 }
-function renderRank(){
+function renderRank(force){
   const meBox=$('rkMe'),list=$('rkList');
+  const sig=JSON.stringify([P.code,RK.meErr,RK.me,P.rk,RK.notice,P.name]);
+  if(force||sig!==RK.sig){RK.sig=sig;renderMe(meBox);}
+  renderList(list);
+}
+function applyBox(){
+  return `<div class="applybox">
+      <button class="linkbtn" id="apToggle" type="button" style="align-self:flex-start;font-size:13px;color:var(--signal)">인증번호가 없나요? 지금 신청하기</button>
+      <form class="apform" id="apForm" novalidate ${RK.applyOpen?'':'hidden'}>
+        <div class="tip" id="apMode">신청 방식을 확인하고 있어요…</div>
+        <label for="apName">이름<input type="text" id="apName" maxlength="20" autocomplete="name" value="${esc(P.name&&P.name!=='새내기'?P.name:'')}"></label>
+        <label for="apOrg">소속 (선택)<input type="text" id="apOrg" maxlength="30" placeholder="예: OO구청 안전총괄과"></label>
+        <label for="apEmail">이메일 (인증번호를 받을 주소)<input type="email" id="apEmail" maxlength="80" inputmode="email" autocomplete="email" placeholder="name@example.com"></label>
+        <label class="agree" for="apAgree"><input type="checkbox" id="apAgree"><span>인증번호 발급과 안내를 위해 이름·소속·이메일을 수집·이용하는 데 동의합니다. 랭킹에는 닉네임만 표시됩니다.</span></label>
+        <button class="btn" id="apSubmit" type="submit">인증번호 신청</button>
+      </form>
+      <div class="formmsg" id="apMsg" role="status"></div>
+    </div>`;
+}
+async function loadApplyMode(){
+  const t=$('apMode'),btn=$('apSubmit');if(!t)return;
+  try{
+    const c=await api({action:'config'});
+    if(c.ok&&!c.open){t.textContent=ERRMSG.closed;btn.disabled=true;return;}
+    t.textContent=c.mode==='approve'?'운영자가 확인한 뒤 입력한 이메일로 인증번호를 보내 드립니다.':'신청하면 바로 인증번호가 발급되어 자동으로 등록되고, 이메일로도 보내 드립니다.';
+  }catch(e){t.textContent=errText(e);}
+}
+function bindApply(){
+  const tg=$('apToggle');if(!tg)return;
+  tg.onclick=()=>{RK.applyOpen=!$('apForm').hidden?false:true;$('apForm').hidden=!RK.applyOpen;if(RK.applyOpen){loadApplyMode();try{$('apName').value?$('apEmail').focus():$('apName').focus();}catch(e){}}};
+  if(RK.applyOpen)loadApplyMode();
+  $('apForm').onsubmit=async e=>{
+    e.preventDefault();
+    const msg=$('apMsg'),btn=$('apSubmit');
+    const name=$('apName').value.trim(),org=$('apOrg').value.trim(),email=$('apEmail').value.trim();
+    const bad=k=>{msg.className='formmsg err';msg.textContent=ERRMSG[k];};
+    if(!name)return bad('need_name');
+    if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(email))return bad('bad_email');
+    if(!$('apAgree').checked)return bad('need_agree');
+    btn.disabled=true;msg.className='formmsg';msg.textContent='신청을 보내고 있어요…';
+    try{
+      const res=await api({action:'apply',name,org,email,agree:'1'});
+      if(!res.ok)throw {code:res.error};
+      if(res.status==='issued'){
+        try{await registerCode(res.code);}catch(err){P.code=fmtCode(res.code);save();}
+        RK.applyOpen=false;RK.meErr='';
+        RK.notice=`인증번호 <b>${esc(res.code)}</b> 가 발급되어 자동으로 등록되었습니다.${res.mailed?` ${esc(email)}로도 보내 드렸어요.`:''} 다른 기기에서 쓸 때 필요하니 메모해 두세요.`;
+        sfx('good');renderRank(true);loadRank();renderBanner();
+      }else if(res.status==='pending'){
+        RK.applyOpen=false;$('apForm').hidden=true;
+        msg.className='formmsg ok';msg.textContent=res.again?`이미 접수된 신청입니다. 운영자가 승인하면 ${email}로 인증번호를 보내 드립니다.`:`신청이 접수되었습니다. 운영자가 승인하면 ${email}로 인증번호를 보내 드립니다.`;
+      }else if(res.status==='already'){
+        RK.applyOpen=false;$('apForm').hidden=true;
+        msg.className='formmsg ok';msg.textContent=`이미 인증번호를 받은 이메일입니다. ${res.mailed?email+'로 번호를 다시 보내 드렸어요. 메일함을 확인하세요.':'운영자에게 번호를 문의하세요.'}`;
+      }
+    }catch(err){msg.className='formmsg err';msg.textContent=errText(err);btn.disabled=false;}
+  };
+}
+function renderMe(meBox){
   if(!P.code||RK.meErr){
     meBox.innerHTML=`<div class="rankcard ghost">
       <div class="eyebrow">랭킹 참여 인증</div>
-      <div class="line"><b>운영자에게 받은 인증번호를 입력하세요.</b></div>
+      <div class="line"><b>인증번호를 입력하세요.</b></div>
       <div class="tip">인증번호는 1인 1개입니다. 등록하면 지금부터 마치는 관문 점수가 랭킹에 반영됩니다.${RK.meErr?`<br><span style="color:var(--bad)">${ERRMSG[RK.meErr]||''}</span>`:''}</div>
       <form class="codeform" id="codeForm" novalidate>
         <input id="rkCode" placeholder="KCL-XXXX-XXXX" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" value="${esc(RK.meErr?fmtCode(P.code):'')}">
         <button class="btn" id="rkSubmit" type="submit">등록</button>
       </form>
-      <div class="formmsg" id="rkMsg" role="status"></div></div>`;
+      <div class="formmsg" id="rkMsg" role="status"></div>
+      ${applyBox()}</div>`;
+    bindApply();
     $('codeForm').onsubmit=async e=>{
       e.preventDefault();
       const v=$('rkCode').value,msg=$('rkMsg'),btn=$('rkSubmit');
       if(!v.trim()){msg.className='formmsg err';msg.textContent='인증번호를 입력하세요.';return;}
       btn.disabled=true;msg.className='formmsg';msg.textContent='확인하고 있어요…';
-      try{await registerCode(v);RK.meErr='';msg.className='formmsg ok';msg.textContent='등록되었습니다!';sfx('good');loadRank();}
+      try{await registerCode(v);RK.meErr='';RK.notice='인증번호가 등록되었습니다. 이제 관문을 마칠 때마다 순위가 반영됩니다.';sfx('good');renderRank(true);loadRank();}
       catch(err){msg.className='formmsg err';msg.textContent=errText(err);btn.disabled=false;}
     };
   }else{
     const r=RK.me||P.rk;
     meBox.innerHTML=`<div class="rankcard">
+      ${RK.notice?`<div class="notice ok" role="status">${RK.notice}</div>`:''}
       <div class="eyebrow">${esc(P.name||'새내기')} ${rank()} · 내 랭킹</div>
       ${r&&r.rank?`<div class="rk">${r.rank}위 <small>/ ${r.count}명</small></div>
       <div class="line">총점 <b>${r.total}점</b> · 통과 관문 <span class="dots">${ORDER.map((_,i)=>`<i class="${i<(r.passed||0)?'on':''}"></i>`).join('')}</span> ${r.passed||0}/7 · 적정 답변 ${r.goods||0}개</div>
       <div class="tip">${gapTip(r)}</div>`:`<div class="line">아직 기록이 없어요. 관문을 하나 마치면 랭킹에 이름이 올라갑니다.</div>`}
       <div class="tip">인증번호 ${maskCode(P.code)} <button class="linkbtn" id="rkChange" type="button">다른 번호로 변경</button></div></div>`;
-    $('rkChange').onclick=()=>{P.code='';P.rk=null;P.pending=[];RK.me=null;save();renderRank();renderBanner();};
+    $('rkChange').onclick=()=>{P.code='';P.rk=null;P.pending=[];RK.me=null;RK.notice='';save();renderRank(true);renderBanner();};
   }
+}
+function renderList(list){
   if(RK.loading&&!RK.top){list.innerHTML=`<div class="rkstate">랭킹을 불러오고 있어요…</div>`;return;}
   if(RK.err){list.innerHTML=`<div class="rkstate">${RK.err}</div>`;return;}
   if(!RK.top)return;

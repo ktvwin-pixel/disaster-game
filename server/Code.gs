@@ -10,6 +10,8 @@
  *   ?action=verify&code=KCL-XXXX-XXXX&nick=이름
  *   ?action=submit&code=…&nick=…&costume=lime&stage=fire&power=9&goods=4&npc=…&run=고유ID
  *   ?action=rank&code=…            (code 없이도 상위 랭킹 조회 가능)
+ *   ?action=apply&name=…&org=…&email=…&agree=1   (인증번호 신청 → 자동 발급 또는 승인 대기)
+ *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
 const STAGES = ['flood', 'fire', 'quake', 'blast', 'heat', 'collapse', 'virus'];
@@ -23,8 +25,18 @@ const TOP = 50;          // 게임에 보여줄 상위 인원
 const SHEETS = {
   codes: { name: '인증번호', head: ['인증번호', '발급 대상(메모)', '상태', '발급일', '최초 사용일', '닉네임'] },
   rank: { name: '랭킹', head: ['인증번호', '닉네임', '복장', '침수', '화재', '지진', '폭발', '폭염', '건물붕괴', '감염병확산', '통과 관문 수', '적정 답변 누적', '훈련 횟수', '관문 점수', '총점', '최근 훈련'] },
-  log: { name: '훈련기록', head: ['시각', '인증번호', '닉네임', '재난', '대상', '최종 파워', '통과', '적정 답변', '훈련 ID'] }
+  log: { name: '훈련기록', head: ['시각', '인증번호', '닉네임', '재난', '대상', '최종 파워', '통과', '적정 답변', '훈련 ID'] },
+  req: { name: '인증신청', head: ['신청 시각', '이름', '소속', '이메일', '상태', '인증번호', '처리 시각', '메모'] },
+  conf: { name: '설정', head: ['항목', '값', '설명'] }
 };
+const CONF_DEFAULT = [
+  ['발급 방식', '자동', '자동: 신청 즉시 번호 발급 · 승인: 운영자가 [랭킹 관리] 메뉴로 승인해야 발급'],
+  ['신청 받기', '켜기', '끄기로 바꾸면 게임에서 새 신청을 받지 않습니다'],
+  ['하루 자동 발급 한도', 200, '하루 자동 발급 수가 이 값을 넘으면 그날 신청은 승인 대기로 넘어갑니다'],
+  ['이메일 발송', '켜기', '발급된 번호를 신청자 이메일로 보냅니다'],
+  ['보내는 사람 이름', 'KOREA CONTENTS LAB', '안내 메일의 보낸 사람 이름']
+];
+const GAME_URL = 'https://ktvwin-pixel.github.io/disaster-game/';
 
 /* ---------- 웹 앱 진입점 ---------- */
 function doGet(e) {
@@ -34,6 +46,8 @@ function doGet(e) {
     if (p.action === 'verify') out = verify_(p);
     else if (p.action === 'submit') out = submit_(p);
     else if (p.action === 'rank') out = rank_(p.code);
+    else if (p.action === 'apply') out = apply_(p);
+    else if (p.action === 'config') out = { ok: true, open: conf_('신청 받기') !== '끄기', mode: conf_('발급 방식') === '승인' ? 'approve' : 'auto' };
     else out = { ok: true, service: '재난소통 영웅 랭킹', holder: 'KOREA CONTENTS LAB' };
   } catch (err) {
     out = { ok: false, error: 'server', message: String((err && err.message) || err) };
@@ -45,8 +59,17 @@ function doGet(e) {
 function sheet_(key) {
   const def = SHEETS[key], ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(def.name);
-  if (!sh) { sh = ss.insertSheet(def.name); sh.appendRow(def.head); sh.setFrozenRows(1); }
+  if (!sh) {
+    sh = ss.insertSheet(def.name); sh.appendRow(def.head); sh.setFrozenRows(1);
+    if (key === 'conf') sh.getRange(2, 1, CONF_DEFAULT.length, 3).setValues(CONF_DEFAULT);
+  }
   return sh;
+}
+function conf_(name) {
+  const v = sheet_('conf').getDataRange().getValues();
+  for (let i = 1; i < v.length; i++) if (String(v[i][0]).trim() === name) return String(v[i][1]).trim();
+  const d = CONF_DEFAULT.find(r => r[0] === name);
+  return d ? String(d[1]) : '';
 }
 const norm_ = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const cleanNick_ = s => String(s || '').replace(/[<>&"'\u0000-\u001f]/g, '').trim().slice(0, 12) || '익명';
@@ -162,9 +185,122 @@ function myInfo_(list, code) {
   return { rank: me.rank, count: list.length, total: me.total, passed: me.passed, goods: me.goods, gapUp: gapUp };
 }
 
+/* ---------- 인증번호 신청 ---------- */
+const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/;
+const clean_ = (s, n) => String(s || '').replace(/[<>&"'\u0000-\u001f]/g, '').trim().slice(0, n);
+
+function newCodes_(n) {
+  const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const have = new Set(sheet_('codes').getDataRange().getValues().map(r => norm_(r[0])));
+  const part = () => Array.from({ length: 4 }, () => A[Math.floor(Math.random() * A.length)]).join('');
+  const out = [];
+  while (out.length < n) {
+    const code = 'KCL-' + part() + '-' + part();
+    if (have.has(norm_(code))) continue;
+    have.add(norm_(code)); out.push(code);
+  }
+  return out;
+}
+function issueTo_(memo) {
+  const code = newCodes_(1)[0];
+  const sh = sheet_('codes');
+  sh.getRange(sh.getLastRow() + 1, 1, 1, 6).setValues([[code, memo, '사용가능', today_(), '', '']]);
+  return code;
+}
+function mail_(to, name, code) {
+  if (conf_('이메일 발송') === '끄기') return '메일 발송 꺼짐';
+  try {
+    const sender = conf_('보내는 사람 이름') || 'KOREA CONTENTS LAB';
+    MailApp.sendEmail({
+      to: to, name: sender,
+      subject: '[재난소통 영웅] 랭킹 인증번호 안내',
+      htmlBody: '<div style="font-family:sans-serif;line-height:1.7">' + clean_(name, 20) + '님, 재난소통 영웅 랭킹 인증번호를 보내 드립니다.<br><br>' +
+        '<div style="font-size:22px;font-weight:bold;letter-spacing:2px;padding:10px 14px;background:#fff4d6;display:inline-block">' + code + '</div><br><br>' +
+        '게임 → <b>랭킹 보기</b> → 인증번호 입력란에 위 번호를 넣고 <b>등록</b>을 누르세요.<br>' +
+        '게임 주소: <a href="' + GAME_URL + '">' + GAME_URL + '</a><br><br>' +
+        '<span style="color:#888;font-size:12px">이 번호는 1인 1개입니다. 다른 사람과 함께 쓰지 마세요.<br>© 2026 ' + sender + '</span></div>'
+    });
+    return '메일 발송';
+  } catch (e) {
+    return '메일 발송 실패: ' + String(e && e.message || e).slice(0, 60);
+  }
+}
+function apply_(p) {
+  if (conf_('신청 받기') === '끄기') return { ok: false, error: 'closed' };
+  const name = clean_(p.name, 20), org = clean_(p.org, 30), email = clean_(p.email, 80).toLowerCase();
+  if (!name) return { ok: false, error: 'need_name' };
+  if (!EMAIL_RE.test(email)) return { ok: false, error: 'bad_email' };
+  if (String(p.agree) !== '1') return { ok: false, error: 'need_agree' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sh = sheet_('req');
+    const v = sh.getDataRange().getValues();
+    for (let i = v.length - 1; i >= 1; i--) {
+      if (String(v[i][3]).toLowerCase() !== email) continue;
+      const st = String(v[i][4]);
+      if (st === '발급' && v[i][5]) {
+        const note = mail_(email, name, String(v[i][5]));
+        sh.getRange(i + 1, 8).setValue('재발송 요청 ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'MM-dd HH:mm') + ' · ' + note);
+        return { ok: true, status: 'already', mailed: note === '메일 발송' };
+      }
+      if (st === '대기') return { ok: true, status: 'pending', again: true };
+      if (st === '거절') return { ok: false, error: 'rejected' };
+    }
+    const now = new Date();
+    let auto = conf_('발급 방식') !== '승인';
+    if (auto) {
+      const cap = parseInt(conf_('하루 자동 발급 한도'), 10) || 200;
+      const t = today_();
+      const issuedToday = v.slice(1).filter(r => r[4] === '발급' && r[6] && Utilities.formatDate(new Date(r[6]), 'Asia/Seoul', 'yyyy-MM-dd') === t).length;
+      if (issuedToday >= cap) auto = false;
+    }
+    if (!auto) {
+      sh.appendRow([now, name, org, email, '대기', '', '', '']);
+      return { ok: true, status: 'pending' };
+    }
+    const code = issueTo_(name + (org ? ' / ' + org : '') + ' / ' + email);
+    const note = mail_(email, name, code);
+    sh.appendRow([now, name, org, email, '발급', code, now, '자동 발급 · ' + note]);
+    return { ok: true, status: 'issued', code: code, mailed: note === '메일 발송' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* ---------- 운영자: 승인 대기 신청 처리 ---------- */
+function approveSelected() { approve_(true); }
+function approveAll() { approve_(false); }
+function approve_(onlySelected) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = sheet_('req');
+  let rows = [];
+  if (onlySelected) {
+    if (ss.getActiveSheet().getName() !== SHEETS.req.name) { ss.toast('[인증신청] 탭에서 승인할 줄을 선택한 뒤 다시 누르세요.', '랭킹 관리'); return; }
+    const r = ss.getActiveRange();
+    for (let i = r.getRow(); i < r.getRow() + r.getNumRows(); i++) if (i > 1) rows.push(i);
+  } else {
+    const v = sh.getDataRange().getValues();
+    for (let i = 1; i < v.length; i++) if (v[i][4] === '대기') rows.push(i + 1);
+  }
+  let n = 0;
+  rows.forEach(row => {
+    const r = sh.getRange(row, 1, 1, 8).getValues()[0];
+    if (r[4] !== '대기') return;
+    const code = issueTo_(r[1] + (r[2] ? ' / ' + r[2] : '') + ' / ' + r[3]);
+    const note = mail_(r[3], r[1], code);
+    sh.getRange(row, 5, 1, 4).setValues([['발급', code, new Date(), '운영자 승인 · ' + note]]);
+    n++;
+  });
+  ss.toast(n + '건을 승인하고 인증번호를 발급했습니다.', '랭킹 관리');
+}
+
 /* ---------- 시트 메뉴 (운영자용) ---------- */
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('랭킹 관리')
+    .addItem('선택한 신청 승인·발송', 'approveSelected')
+    .addItem('대기 중인 신청 모두 승인·발송', 'approveAll')
+    .addSeparator()
     .addItem('인증번호 10개 발급', 'issue10')
     .addItem('인증번호 50개 발급', 'issue50')
     .addSeparator()
@@ -174,17 +310,8 @@ function onOpen() {
 function issue10() { issue_(10); }
 function issue50() { issue_(50); }
 function issue_(n) {
-  const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   const sh = sheet_('codes');
-  const have = new Set(sh.getDataRange().getValues().map(r => norm_(r[0])));
-  const part = () => Array.from({ length: 4 }, () => A[Math.floor(Math.random() * A.length)]).join('');
-  const rows = [];
-  while (rows.length < n) {
-    const code = 'KCL-' + part() + '-' + part();
-    if (have.has(norm_(code))) continue;
-    have.add(norm_(code));
-    rows.push([code, '', '사용가능', today_(), '', '']);
-  }
+  const rows = newCodes_(n).map(code => [code, '', '사용가능', today_(), '', '']);
   sh.getRange(sh.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
   SpreadsheetApp.getActiveSpreadsheet().toast(n + '개의 인증번호를 아래에 추가했습니다.', '랭킹 관리');
 }
