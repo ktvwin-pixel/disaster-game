@@ -174,6 +174,39 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .snd[aria-pressed="false"]{color:var(--muted)}
 .snd[aria-pressed="false"] .w1,.snd[aria-pressed="false"] .w2{display:none}
 .snd[aria-pressed="false"] .x{display:inline}
+.rankcard{background:var(--panel2);border:1.5px solid var(--signal);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;text-align:left}
+.rankcard.ghost{border-style:dashed;border-color:var(--line);background:var(--panel)}
+.rankcard .rk{font-family:var(--display);font-size:38px;line-height:1.05;color:var(--signal);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rankcard .rk small{font-size:16px;color:var(--muted)}
+.rankcard .line{font-size:14px}
+.rankcard .tip{font-size:13px;color:var(--muted)}
+.rankcard .btn{align-self:flex-start;margin-top:4px}
+.move{font-family:var(--body);font-size:13px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--panel);white-space:nowrap}
+.move.up{color:var(--ok)} .move.down{color:var(--bad)} .move.new{color:var(--signal)}
+.rankbanner{display:flex;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--ink);text-align:left;width:100%}
+.rankbanner .rkn{font-family:var(--display);font-size:26px;color:var(--signal);flex:none;min-width:58px;text-align:center;line-height:1}
+.rankbanner .rkn small{display:block;font-family:var(--body);font-size:10px;color:var(--muted);letter-spacing:.1em;margin-top:3px}
+.rankbanner .rkt{flex:1;min-width:0;font-size:13px}
+.rankbanner .rkt b{display:block;font-size:15px}
+.rankbanner .go{color:var(--muted);font-size:20px}
+.rankhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rankhead{justify-content:space-between}
+.rankhead h2{order:-1;flex-basis:100%;font-size:30px;word-break:keep-all}
+.rlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rlist li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel);border-radius:12px;padding:10px 12px}
+.rlist li.me{box-shadow:inset 0 0 0 2px var(--signal);background:var(--panel2)}
+.rlist .no{font-family:var(--display);font-size:22px;text-align:center;color:var(--muted)}
+.rlist .no.g1{color:#ffcf3f}.rlist .no.g2{color:#d6deea}.rlist .no.g3{color:#e8a466}
+.rlist .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.rlist .sub{font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rlist .pt{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums;text-align:right}
+.rlist .pt small{font-size:12px;color:var(--muted)}
+.dots{display:inline-flex;gap:3px}.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.dots i.on{background:var(--ok)}
+.codeform{display:flex;gap:8px;flex-wrap:wrap}
+.codeform input{flex:1 1 180px;min-width:0;background:var(--night);border:1.5px solid var(--line);color:var(--ink);border-radius:10px;padding:12px;font-size:17px;font-family:var(--body);letter-spacing:.08em;text-transform:uppercase}
+.formmsg{font-size:13px;min-height:1.2em}
+.formmsg.err{color:var(--bad)} .formmsg.ok{color:var(--ok)}
+.rkstate{background:var(--panel);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
 .hint{background:var(--night);border-radius:10px;padding:8px 10px;font-size:13px}
 .hint ul{margin:4px 0 0;padding-left:18px}
 
@@ -231,7 +264,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
       <span class="lab">복장</span>
       <div class="costumes" id="segCostume"></div>
     </div>
-    <button class="btn ghost" data-snd>배경음악</button>
+    <div class="maprow"><button class="btn ghost" data-snd>배경음악</button><button class="btn ghost" data-rank>랭킹 보기</button></div>
     <button class="btn" id="btnStart">훈련 시작</button>
     <div class="foot">© 2026 KOREA CONTENTS LAB. All rights reserved.<button class="linkbtn" data-rights>저작권 정보</button><div class="rights" data-rightsbox hidden></div></div>
   </section>
@@ -246,6 +279,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
       <h2 style="font-size:24px">출동할 재난 현장을 고르세요</h2>
       <p class="muted" style="margin:4px 0 0;font-size:13px">현장마다 다른 대상이 무작위로 기다립니다. 문제은행 100문항 중 아직 안 본 대화가 먼저 나옵니다.</p>
     </div>
+    <button class="rankbanner" id="rankBanner" data-rank></button>
     <div class="tiles" id="tiles"></div>
     <div class="maprow">
       <button class="btn" id="btnRandom">무작위 출동</button>
@@ -281,6 +315,19 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
         <span id="charCount">0자</span>
       </div>
     </div>
+  </section>
+
+  <!-- RANKING -->
+  <section class="screen map pad" id="scrRank" hidden>
+    <div class="rankhead">
+      <button class="btn ghost small" id="rkBack">← 돌아가기</button>
+      <h2>재난소통 랭킹</h2>
+      <button class="btn ghost small" id="rkRefresh">새로고침</button>
+    </div>
+    <div id="rkMe"></div>
+    <div id="rkList"></div>
+    <p class="muted" style="font-size:12px;margin:0">총점 = 관문 점수(통과한 관문별 최고 파워 × 10, 최대 700점) + 적정 답변 1개당 5점. 관문을 통과하지 못해도 적정 답변은 점수로 쌓입니다.</p>
+    <div class="foot">© 2026 KOREA CONTENTS LAB. All rights reserved.<button class="linkbtn" data-rights>저작권 정보</button><div class="rights" data-rightsbox hidden></div></div>
   </section>
 
   <!-- RESULT -->
@@ -569,7 +616,7 @@ document.head.appendChild(sceneCSS);
 
 /* ===================== 상태 ===================== */
 const KEY='disasterHeroV1';
-let P={snd:true,name:'',g:'m',c:'lime',cleared:{},seen:[],tot:0,good:0};
+let P={code:'',pending:[],rk:null,snd:true,name:'',g:'m',c:'lime',cleared:{},seen:[],tot:0,good:0};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s)P=Object.assign(P,s);}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P));}catch(e){}};
 const $=id=>document.getElementById(id);
@@ -577,7 +624,7 @@ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&qu
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const rank=()=>P.c==='blue'?'시민':P.c==='gov'?'주무관':'대원';
 const me=mood=>avatar(Object.assign({g:P.g,mood},COST[P.c]));
-function show(id){['scrSetup','scrMap','scrPlay','scrResult','scrMedal'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0);}
+function show(id){['scrSetup','scrMap','scrPlay','scrResult','scrMedal','scrRank'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0);}
 
 /* ===================== 설정 화면 ===================== */
 function renderSetup(){
@@ -598,6 +645,7 @@ function renderMap(){
   $('mapProg').textContent=`관문 ${n}/7`;
   $('tiles').innerHTML=ORDER.map(d=>{const c=P.cleared[d];return `<button class="tile ${c?'cleared':''}" data-d="${d}"><div class="thumb">${sceneSVG(d,'t'+d)}</div><div class="tb"><b>${D[d].n}</b><span class="chip ${c?'done':'todo'}">${c?'통과 '+c+'점':'도전'}</span></div></button>`}).join('');
   $('resetMsg').hidden=true;
+  renderBanner();
 }
 $('tiles').onclick=e=>{const t=e.target.closest('[data-d]');if(t)startStage(t.dataset.d);};
 $('btnRandom').onclick=()=>{const left=ORDER.filter(d=>!P.cleared[d]);startStage(pick(left.length?left:ORDER));};
@@ -774,6 +822,178 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('visibilitychange',()=>{document.hidden?bgmStop():(P.snd&&AU.ctx&&bgmStart());});
 
+/* ===================== 랭킹 (인증번호 · 구글 시트 서버) ===================== */
+const RANK_API='';  // 랭킹 서버(Apps Script 웹 앱) 주소: https://script.google.com/macros/s/…/exec
+const RK={top:null,me:null,count:0,loading:false,err:'',meErr:'',back:'scrMap'};
+let flushing=null;
+const ERRMSG={
+  invalid:'등록되지 않은 인증번호입니다. 번호를 다시 확인하세요.',
+  stopped:'사용이 중지된 인증번호입니다. 운영자에게 문의하세요.',
+  noapi:'랭킹 서버를 준비하고 있습니다. 조금만 기다려 주세요.',
+  network:'랭킹 서버에 연결하지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도하세요.',
+  http:'랭킹 서버 응답이 올바르지 않아요. 잠시 후 다시 시도하세요.',
+  server:'랭킹 서버에서 오류가 났어요. 잠시 후 다시 시도하세요.'
+};
+const errText=e=>ERRMSG[(e&&(e.code||e.error))]||ERRMSG.network;
+const fmtCode=c=>{const n=String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return n.length===11&&n.startsWith('KCL')?`KCL-${n.slice(3,7)}-${n.slice(7)}`:String(c||'').trim().toUpperCase();};
+const maskCode=c=>fmtCode(c).replace(/-([A-Z0-9]{4})$/,'-****');
+async function api(params){
+  if(!RANK_API)throw {code:'noapi'};
+  let ctl=null,t=null;
+  try{ctl=new AbortController();t=setTimeout(()=>ctl.abort(),15000);}catch(e){}
+  try{
+    const r=await fetch(RANK_API+'?'+new URLSearchParams(params).toString(),ctl?{signal:ctl.signal}:{});
+    if(!r.ok)throw {code:'http'};
+    return await r.json();
+  }catch(e){throw (e&&e.code&&ERRMSG[e.code])?e:{code:'network'};}
+  finally{if(t)clearTimeout(t);}
+}
+function keepRk(r){if(r&&r.rank){P.rk={rank:r.rank,count:r.count,total:r.total,passed:r.passed,goods:r.goods,gapUp:r.gapUp};save();}}
+function queueRun(rec){if(!P.code)return;P.pending=(P.pending||[]).concat([rec]).slice(-30);save();}
+function flushPending(){
+  if(flushing)return flushing;
+  flushing=(async()=>{
+    let last=null;
+    try{
+      while(P.code&&P.pending&&P.pending.length){
+        const res=await api(Object.assign({action:'submit',code:P.code},P.pending[0]));
+        if(!res.ok&&(res.error==='invalid'||res.error==='stopped'))throw {code:res.error};
+        P.pending.shift();save();
+        if(res.ok)last=res;
+      }
+    }finally{flushing=null;}
+    if(last)keepRk(last);
+    return last;
+  })();
+  return flushing;
+}
+async function registerCode(raw){
+  const code=fmtCode(raw);
+  if(code.replace(/[^A-Z0-9]/g,'').length<8)throw {code:'invalid'};
+  const res=await api({action:'verify',code,nick:P.name||'새내기'});
+  if(!res.ok)throw {code:res.error};
+  P.code=code;keepRk(res);save();
+  return res;
+}
+function moveHtml(prev,now){
+  if(!now)return'';
+  if(!prev)return'<span class="move new">새로 진입</span>';
+  if(prev>now)return`<span class="move up">▲ ${prev-now}계단 상승</span>`;
+  if(prev<now)return`<span class="move down">▼ ${now-prev}</span>`;
+  return'<span class="move">순위 유지</span>';
+}
+function gapTip(r){
+  if(!r||!r.rank)return'';
+  if(r.rank===1)return'현재 1위입니다. 자리를 지켜 보세요!';
+  if(r.gapUp)return`다음 순위까지 ${r.gapUp}점 · 적정 답변 ${Math.ceil(r.gapUp/5)}개면 올라설 수 있어요.`;
+  return'';
+}
+function joinCard(){
+  return`<div class="rankcard ghost"><div class="eyebrow">랭킹 참여</div><div class="line"><b>인증번호를 등록하면 내 순위가 보여요.</b></div><div class="tip">운영자에게 받은 인증번호(KCL-로 시작)를 등록하면 훈련 점수가 전국 랭킹에 반영됩니다.</div><button class="btn small" data-rank>인증번호 등록</button></div>`;
+}
+function resultRank(pass,goods){
+  const box=$('resRank');if(!box)return;
+  if(!P.code){box.innerHTML=joinCard();return;}
+  box.innerHTML=`<div class="rankcard"><div class="eyebrow">내 랭킹</div><div class="line muted">순위를 확인하고 있어요…</div></div>`;
+  const prev=P.rk&&P.rk.rank;
+  flushPending().then(res=>{
+    if(!$('resRank'))return;
+    const r=res||P.rk;
+    if(!r||!r.rank){box.innerHTML=`<div class="rankcard"><div class="eyebrow">내 랭킹</div><div class="line">점수가 반영되었습니다.</div><button class="btn small" data-rank>전체 랭킹 보기</button></div>`;return;}
+    const gained=res?res.gained:0;
+    box.innerHTML=`<div class="rankcard"><div class="eyebrow">${pass?'관문 통과 · 내 랭킹':'내 랭킹'}</div>
+      <div class="rk">${r.rank}위 <small>/ ${r.count}명</small> ${moveHtml(res?res.prevRank:prev,r.rank)}</div>
+      <div class="line">총점 <b>${r.total}점</b>${gained>0?` <span class="move up">+${gained}</span>`:''}${!pass&&goods?` · 적정 답변 ${goods}개가 점수로 쌓였어요`:''}</div>
+      <div class="tip">${gapTip(r)}</div>
+      <button class="btn small" data-rank>전체 랭킹 보기</button></div>`;
+    renderBanner();
+  }).catch(e=>{
+    if(!$('resRank'))return;
+    const lost=e&&(e.code==='invalid'||e.code==='stopped');
+    box.innerHTML=`<div class="rankcard ghost"><div class="eyebrow">내 랭킹</div><div class="line">${errText(e)}</div><div class="tip">${lost?'인증번호를 다시 등록해 주세요.':'이번 점수는 기기에 보관했다가 다음에 연결되면 자동으로 올립니다.'}</div><button class="btn small" data-rank>랭킹 화면 열기</button></div>`;
+  });
+}
+function medalRank(){
+  const box=$('medalRank');if(!box)return;
+  if(!P.code){box.innerHTML=joinCard();return;}
+  const r=P.rk;
+  box.innerHTML=r&&r.rank?`<div class="rankcard"><div class="eyebrow">영웅의 현재 랭킹</div><div class="rk">${r.rank}위 <small>/ ${r.count}명</small></div><div class="line">총점 <b>${r.total}점</b></div><div class="tip">${gapTip(r)}</div><button class="btn small" data-rank>전체 랭킹 보기</button></div>`:'';
+}
+function renderBanner(){
+  const b=$('rankBanner');if(!b)return;
+  if(!P.code){b.innerHTML=`<span class="rkn">TOP<small>RANKING</small></span><span class="rkt"><b>랭킹에 참여하세요</b>인증번호를 등록하면 훈련 점수로 순위를 겨룹니다.</span><span class="go" aria-hidden="true">›</span>`;return;}
+  const r=P.rk;
+  b.innerHTML=r&&r.rank?`<span class="rkn">${r.rank}위<small>/ ${r.count}명</small></span><span class="rkt"><b>총점 ${r.total}점</b>${gapTip(r)||'전체 랭킹을 확인해 보세요.'}</span><span class="go" aria-hidden="true">›</span>`
+    :`<span class="rkn">-<small>RANKING</small></span><span class="rkt"><b>첫 훈련을 마치면 순위가 생겨요</b>관문을 하나 끝내면 랭킹에 이름이 올라갑니다.</span><span class="go" aria-hidden="true">›</span>`;
+}
+function openRank(){
+  const cur=['scrSetup','scrMap','scrResult','scrMedal'].find(id=>!$(id).hidden);
+  RK.back=cur||(P.name?'scrMap':'scrSetup');
+  show('scrRank');
+  try{if(location.hash!=='#ranking')history.replaceState(null,'','#ranking');}catch(e){}
+  renderRank();loadRank();
+}
+function closeRank(){
+  try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+  const to=RK.back==='scrResult'||RK.back==='scrMedal'||RK.back==='scrSetup'?RK.back:'scrMap';
+  if(to==='scrMap')renderMap();
+  show(to);
+}
+async function loadRank(){
+  RK.loading=true;RK.err='';renderRank();
+  try{
+    if(P.code&&P.pending&&P.pending.length){try{await flushPending();}catch(e){}}
+    const res=await api({action:'rank',code:P.code||''});
+    if(!res.ok)throw {code:res.error};
+    RK.top=res.top||[];RK.count=res.count||0;RK.meErr=res.meError||'';
+    RK.me=res.me||null;if(res.me)keepRk(res.me);
+  }catch(e){RK.err=errText(e);}
+  RK.loading=false;renderRank();renderBanner();
+}
+function renderRank(){
+  const meBox=$('rkMe'),list=$('rkList');
+  if(!P.code||RK.meErr){
+    meBox.innerHTML=`<div class="rankcard ghost">
+      <div class="eyebrow">랭킹 참여 인증</div>
+      <div class="line"><b>운영자에게 받은 인증번호를 입력하세요.</b></div>
+      <div class="tip">인증번호는 1인 1개입니다. 등록하면 지금부터 마치는 관문 점수가 랭킹에 반영됩니다.${RK.meErr?`<br><span style="color:var(--bad)">${ERRMSG[RK.meErr]||''}</span>`:''}</div>
+      <form class="codeform" id="codeForm" novalidate>
+        <input id="rkCode" placeholder="KCL-XXXX-XXXX" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" value="${esc(RK.meErr?fmtCode(P.code):'')}">
+        <button class="btn" id="rkSubmit" type="submit">등록</button>
+      </form>
+      <div class="formmsg" id="rkMsg" role="status"></div></div>`;
+    $('codeForm').onsubmit=async e=>{
+      e.preventDefault();
+      const v=$('rkCode').value,msg=$('rkMsg'),btn=$('rkSubmit');
+      if(!v.trim()){msg.className='formmsg err';msg.textContent='인증번호를 입력하세요.';return;}
+      btn.disabled=true;msg.className='formmsg';msg.textContent='확인하고 있어요…';
+      try{await registerCode(v);RK.meErr='';msg.className='formmsg ok';msg.textContent='등록되었습니다!';sfx('good');loadRank();}
+      catch(err){msg.className='formmsg err';msg.textContent=errText(err);btn.disabled=false;}
+    };
+  }else{
+    const r=RK.me||P.rk;
+    meBox.innerHTML=`<div class="rankcard">
+      <div class="eyebrow">${esc(P.name||'새내기')} ${rank()} · 내 랭킹</div>
+      ${r&&r.rank?`<div class="rk">${r.rank}위 <small>/ ${r.count}명</small></div>
+      <div class="line">총점 <b>${r.total}점</b> · 통과 관문 <span class="dots">${ORDER.map((_,i)=>`<i class="${i<(r.passed||0)?'on':''}"></i>`).join('')}</span> ${r.passed||0}/7 · 적정 답변 ${r.goods||0}개</div>
+      <div class="tip">${gapTip(r)}</div>`:`<div class="line">아직 기록이 없어요. 관문을 하나 마치면 랭킹에 이름이 올라갑니다.</div>`}
+      <div class="tip">인증번호 ${maskCode(P.code)} <button class="linkbtn" id="rkChange" type="button">다른 번호로 변경</button></div></div>`;
+    $('rkChange').onclick=()=>{P.code='';P.rk=null;P.pending=[];RK.me=null;save();renderRank();renderBanner();};
+  }
+  if(RK.loading&&!RK.top){list.innerHTML=`<div class="rkstate">랭킹을 불러오고 있어요…</div>`;return;}
+  if(RK.err){list.innerHTML=`<div class="rkstate">${RK.err}</div>`;return;}
+  if(!RK.top)return;
+  if(!RK.top.length){list.innerHTML=`<div class="rkstate">아직 랭킹이 비어 있어요. 첫 번째 주인공이 되어 보세요!</div>`;return;}
+  list.innerHTML=`<ol class="rlist" aria-label="상위 랭킹">${RK.top.map(x=>`<li class="${x.me?'me':''}">
+      <span class="no ${x.rank<=3?'g'+x.rank:''}">${x.rank}</span>
+      <span style="min-width:0"><span class="nm">${esc(x.nick)}${x.me?' (나)':''}</span><span class="sub">${esc(x.costume||'')}<span class="dots">${ORDER.map((_,i)=>`<i class="${i<x.passed?'on':''}"></i>`).join('')}</span></span></span>
+      <span class="pt">${x.total}<small>점</small></span></li>`).join('')}</ol>
+    <p class="muted" style="font-size:12px;margin:8px 0 0;text-align:center">참여 ${RK.count}명 · 상위 ${RK.top.length}명 표시</p>`;
+}
+document.addEventListener('click',e=>{if(e.target.closest('[data-rank]')){e.preventDefault();openRank();}});
+$('rkBack').onclick=closeRank;
+$('rkRefresh').onclick=loadRank;
+
 /* ===================== 결과 ===================== */
 function finish(){
   const pass=G.power>=PASS, d=G.d;
@@ -782,6 +1002,7 @@ function finish(){
   save();
   const all=ORDER.every(k=>P.cleared[k]);
   const counts={good:0,mid:0,bad:0};G.rec.forEach(x=>counts[x.g]++);
+  queueRun({nick:P.name||'새내기',costume:P.c,stage:d,power:G.power,goods:counts.good,npc:G.s.npc.n,run:Date.now().toString(36)+Math.random().toString(36).slice(2,8)});
   $('scrResult').innerHTML=`
    <div class="eyebrow">${D[d].n} 현장 · ${esc(G.s.npc.n)}</div>
    <div style="margin:0 auto;width:110px">${me(pass?'good':'bad')}</div>
@@ -789,9 +1010,11 @@ function finish(){
    <div class="verdict">${pass?'관문 통과!':'재훈련이 필요합니다'}</div>
    <p class="muted" style="margin:0">${pass?'상대가 당신의 안내로 안전하게 행동했습니다.':`통과 기준은 파워 ${PASS}점입니다. 핵심 포인트를 2개 이상 담아 다시 도전해 보세요. 다음엔 다른 대상이 나올 수 있습니다.`}</p>
    <p style="margin:0;font-size:13px">적정 ${counts.good} · 미흡 ${counts.mid} · 부족 ${counts.bad}</p>
+   <div id="resRank"></div>
    <ul class="sumlist">${G.rec.map((x,i)=>`<li><span style="color:${x.g==='good'?'var(--ok)':x.g==='mid'?'var(--warn)':'var(--bad)'}">${GL[x.g][0]}</span><span>${i+1}. ${esc(x.q)}</span></li>`).join('')}</ul>
    <div class="maprow">${all&&pass?`<button class="btn" id="rMedal">훈장 받으러 가기</button>`:pass?`<button class="btn" id="rNext">다음 관문으로</button>`:`<button class="btn" id="rRetry">재훈련 받기</button>`}<button class="btn ghost" id="rMap">현장 지도</button></div><div class="endmark"><span class="brand">KOREA CONTENTS LAB</span><small>© 2026 KOREA CONTENTS LAB · 콘텐츠 고유번호 <span data-fp>확인 중</span></small></div>`;
   show('scrResult');fillFP();
+  resultRank(pass,counts.good);
   const b=id=>$(id)&&($(id).onclick=fn[id]);
   const fn={rMedal:medal,rNext:()=>{const left=ORDER.filter(k=>!P.cleared[k]);startStage(left[0]);},rRetry:()=>startStage(d),rMap:()=>{renderMap();show('scrMap');}};
   Object.keys(fn).forEach(b);
@@ -818,8 +1041,10 @@ function medal(){
      <p style="margin:0;font-size:12px;letter-spacing:.2em;font-weight:700">KOREA CONTENTS LAB</p>
      <p style="margin:0;font-size:11px">발급번호 KCL-${today.getFullYear()}-${Math.random().toString(36).slice(2,8).toUpperCase()}</p>
    </div>
+   <div id="medalRank"></div>
    <div class="maprow"><button class="btn" id="mAgain">새 대상으로 다시 훈련</button><button class="btn ghost" id="mMap">현장 지도</button></div><div class="endmark"><span class="brand">KOREA CONTENTS LAB</span><small>© 2026 KOREA CONTENTS LAB · 콘텐츠 고유번호 <span data-fp>확인 중</span></small></div>`;
   show('scrMedal');fillFP();
+  medalRank();
   $('mAgain').onclick=()=>{P.cleared={};save();renderMap();show('scrMap');};
   $('mMap').onclick=()=>{renderMap();show('scrMap');};
 }
@@ -850,6 +1075,9 @@ try{console.info('%c재난소통 영웅 · © 2026 KOREA CONTENTS LAB. All right
 sndUI();
 renderSetup();
 if(P.name){renderMap();show('scrMap');}else show('scrSetup');
+renderBanner();
+if(location.hash==='#ranking')openRank();
+else if(P.code&&P.pending&&P.pending.length)flushPending().then(renderBanner).catch(()=>{});
 </script>
 
 </body>

@@ -7,6 +7,9 @@
 - 복장 5종(민방위 대원 · 소방대원 · 경찰공무원 · 공무원 · 일반인), 남녀 선택
 - 직접 입력 또는 음성 받아쓰기, 휴대폰·태블릿·PC 화면 자동 조정
 - 자체 제작 배경음악과 판정 효과음(켜기/끄기 가능)
+- 인증번호 기반 랭킹: 운영자가 발급한 인증번호로 참여, 관문을 마칠 때마다 내 순위 표시
+  - 랭킹만 바로 보기: https://ktvwin-pixel.github.io/disaster-game/#ranking
+  - 랭킹 서버: `server/Code.gs` (구글 시트 + Apps Script)
 
 **플레이:** https://ktvwin-pixel.github.io/disaster-game/
 
