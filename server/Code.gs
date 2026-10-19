@@ -24,7 +24,7 @@ const TOP = 50;          // 게임에 보여줄 상위 인원
 
 const SHEETS = {
   codes: { name: '인증번호', head: ['인증번호', '발급 대상(메모)', '상태', '발급일', '최초 사용일', '닉네임'] },
-  rank: { name: '랭킹', head: ['인증번호', '닉네임', '복장', '침수', '화재', '지진', '폭발', '폭염', '건물붕괴', '감염병확산', '통과 관문 수', '적정 답변 누적', '훈련 횟수', '관문 점수', '총점', '최근 훈련'] },
+  rank: { name: '랭킹', head: ['인증번호', '닉네임', '복장', '침수', '화재', '지진', '폭발', '폭염', '건물붕괴', '감염병확산', '통과 관문 수', '적정 답변 누적', '훈련 횟수', '관문 점수', '총점', '최근 훈련', '성별'] },
   log: { name: '훈련기록', head: ['시각', '인증번호', '닉네임', '재난', '대상', '최종 파워', '통과', '적정 답변', '훈련 ID'] },
   req: { name: '인증신청', head: ['신청 시각', '이름', '소속', '이메일', '상태', '인증번호', '처리 시각', '메모'] },
   conf: { name: '설정', head: ['항목', '값', '설명'] }
@@ -93,7 +93,20 @@ function verify_(p) {
   const sh = sheet_('codes');
   if (!c.firstUse) sh.getRange(c.row, 5).setValue(new Date());
   if (p.nick) sh.getRange(c.row, 6).setValue(cleanNick_(p.nick));
-  return Object.assign({ ok: true }, myInfo_(rankList_(), c.code));
+  return Object.assign({ ok: true, profile: profile_(c.code) }, myInfo_(rankList_(), c.code));
+}
+
+/* 인증번호로 이어하기: 저장된 별칭·복장·성별·관문별 최고 점수를 돌려줍니다 (인증번호 자체는 돌려주지 않음) */
+function profile_(code) {
+  const v = sheet_('rank').getDataRange().getValues();
+  for (let i = 1; i < v.length; i++) {
+    if (norm_(v[i][0]) !== norm_(code)) continue;
+    const r = v[i], stages = {};
+    STAGES.forEach((k, j) => { stages[k] = Number(r[3 + j]) || 0; });
+    const ck = Object.keys(COSTUME_KO).find(k => COSTUME_KO[k] === r[2]) || ({ '소방대원': 'fire', '경찰공무원': 'police' })[r[2]] || '';
+    return { nick: String(r[1] || ''), costume: ck, g: String(r[16] || ''), stages: stages, goods: Number(r[11]) || 0, runs: Number(r[12]) || 0 };
+  }
+  return null;
 }
 
 /* ---------- 훈련 결과 제출 ---------- */
@@ -121,8 +134,8 @@ function submit_(p) {
     const v = sh.getDataRange().getValues();
     let rowIdx = -1;
     for (let i = 1; i < v.length; i++) if (norm_(v[i][0]) === norm_(c.code)) { rowIdx = i; break; }
-    const row = rowIdx > 0 ? v[rowIdx].slice(0, 16) : [c.code, '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''];
-    while (row.length < 16) row.push('');
+    const row = rowIdx > 0 ? v[rowIdx].slice(0, 17) : [c.code, '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', ''];
+    while (row.length < 17) row.push('');
 
     const col = 3 + STAGES.indexOf(stage);
     if (power >= PASS) row[col] = Math.max(Number(row[col]) || 0, power);
@@ -135,8 +148,9 @@ function submit_(p) {
     row[13] = sum * STAGE_MULT;
     row[14] = row[13] + row[11] * GOOD_PTS;
     row[15] = new Date();
+    if (p.g === 'm' || p.g === 'f') row[16] = p.g;
 
-    if (rowIdx > 0) sh.getRange(rowIdx + 1, 1, 1, 16).setValues([row]);
+    if (rowIdx > 0) sh.getRange(rowIdx + 1, 1, 1, 17).setValues([row]);
     else sh.appendRow(row);
 
     sheet_('log').appendRow([new Date(), c.code, nick, STAGE_KO[stage], String(p.npc || '').slice(0, 20), power, power >= PASS ? '통과' : '재훈련', goods, run]);

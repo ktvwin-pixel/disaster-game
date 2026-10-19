@@ -274,6 +274,11 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
       <span class="lab">복장</span>
       <div class="costumes" id="segCostume"></div>
     </div>
+    <div class="field">
+      <label for="inCode">랭킹 인증번호 <span class="muted" style="font-weight:400">(이어하기 · 선택)</span></label>
+      <div class="codeform"><input id="inCode" placeholder="KCL-XXXX-XXXX" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn ghost" id="btnLoad" type="button">불러오기</button></div>
+      <div class="formmsg" id="loadMsg" role="status">전에 쓰던 인증번호를 넣으면 내 이름·복장·통과 기록과 랭킹을 이어서 쓸 수 있어요.</div>
+    </div>
     <div class="maprow"><button class="btn ghost" data-snd>배경음악</button><button class="btn ghost" data-rank>랭킹 보기</button></div>
     <button class="btn" id="btnStart">훈련 시작</button>
     <div class="foot">© 2026 KOREA CONTENTS LAB. All rights reserved.<button class="linkbtn" data-rights>저작권 정보</button><div class="rights" data-rightsbox hidden></div></div>
@@ -911,10 +916,13 @@ sceneCSS.textContent=`.bg .rain{animation:rn .55s linear infinite}@keyframes rn{
 document.head.appendChild(sceneCSS);
 
 /* ===================== 상태 ===================== */
-const KEY='disasterHeroV1';
+/* 접속할 때마다 새로 시작: 이름·인증번호·진행 기록은 이 화면에만 두고 기기에 저장하지 않습니다.
+   (공용 PC·태블릿에서 다음 사람에게 정보가 남지 않도록) 랭킹을 이어가려면 인증번호를 다시 입력합니다. */
+const KEY='disasterHeroV1', PREF='disasterHeroPref';
 let P={code:'',pending:[],rk:null,snd:true,name:'',g:'m',c:'lime',cleared:{},seen:[],tot:0,good:0};
-try{const s=JSON.parse(localStorage.getItem(KEY));if(s)P=Object.assign(P,s);}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P));}catch(e){}};
+try{localStorage.removeItem(KEY);}catch(e){}
+try{const pr=JSON.parse(localStorage.getItem(PREF));if(pr&&typeof pr.snd==='boolean')P.snd=pr.snd;}catch(e){}
+const save=()=>{try{localStorage.setItem(PREF,JSON.stringify({snd:P.snd}));}catch(e){}};
 const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -933,7 +941,26 @@ function renderSetup(){
 $('segGender').onclick=e=>{const b=e.target.closest('[data-g]');if(b){P.g=b.dataset.g;renderSetup();}};
 $('segCostume').onclick=e=>{const b=e.target.closest('[data-c]');if(b){P.c=b.dataset.c;renderSetup();}};
 $('inName').oninput=e=>{P.name=e.target.value.trim();$('preview').querySelector('div div:nth-child(2)').textContent=P.name||'이름 없음';};
-$('btnStart').onclick=()=>{if(!P.name)P.name='새내기';save();renderMap();show('scrMap');};
+async function loadByCode(raw){
+  const msg=$('loadMsg'),btn=$('btnLoad');
+  if(!String(raw||'').trim()){msg.className='formmsg err';msg.textContent='인증번호를 입력하세요.';return false;}
+  btn.disabled=true;msg.className='formmsg';msg.textContent='기록을 불러오고 있어요…';
+  try{
+    const res=await registerCode(raw);
+    const pf=applyProfile(res);
+    renderSetup();renderBanner();
+    msg.className='formmsg ok';
+    msg.textContent=pf?`${P.name} ${rank()}님, 다시 오신 걸 환영해요! 통과 관문 ${ORDER.filter(d=>P.cleared[d]).length}/7${P.rk&&P.rk.rank?` · 현재 ${P.rk.rank}위 (${P.rk.total}점)`:''}`:'인증번호가 확인되었습니다. 지금부터 훈련 기록이 랭킹에 쌓입니다.';
+    sfx('good');btn.disabled=false;return true;
+  }catch(e){msg.className='formmsg err';msg.textContent=errText(e);btn.disabled=false;return false;}
+}
+$('btnLoad').onclick=()=>loadByCode($('inCode').value);
+$('inCode').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();loadByCode($('inCode').value);}};
+$('btnStart').onclick=async()=>{
+  const typed=$('inCode').value.trim();
+  if(typed&&fmtCode(typed)!==P.code){if(!await loadByCode(typed))return;}
+  if(!P.name)P.name='새내기';renderMap();show('scrMap');
+};
 
 /* ===================== 지도 ===================== */
 function renderMap(){
@@ -1169,6 +1196,18 @@ function flushPending(){
   })();
   return flushing;
 }
+const COSTUME_KEY={'민방위 대원':'lime','소방관':'fire','소방대원':'fire','경찰관':'police','경찰공무원':'police','공무원':'gov','일반인':'blue'};
+function applyProfile(res){
+  const pf=res&&res.profile;
+  if(!pf)return false;
+  if(pf.nick)P.name=pf.nick;
+  const ck=COST[pf.costume]?pf.costume:COSTUME_KEY[pf.costume];
+  if(ck)P.c=ck;
+  if(pf.g==='m'||pf.g==='f')P.g=pf.g;
+  if(pf.stages){P.cleared={};ORDER.forEach(d=>{const v=Number(pf.stages[d])||0;if(v>=PASS)P.cleared[d]=v;});}
+  P.good=Number(pf.goods)||0;P.tot=(Number(pf.runs)||0)*5;
+  return true;
+}
 async function registerCode(raw){
   const code=fmtCode(raw);
   if(code.replace(/[^A-Z0-9]/g,'').length<8)throw {code:'invalid'};
@@ -1330,7 +1369,7 @@ function renderMe(meBox){
       const v=$('rkCode').value,msg=$('rkMsg'),btn=$('rkSubmit');
       if(!v.trim()){msg.className='formmsg err';msg.textContent='인증번호를 입력하세요.';return;}
       btn.disabled=true;msg.className='formmsg';msg.textContent='확인하고 있어요…';
-      try{await registerCode(v);RK.meErr='';RK.notice='인증번호가 등록되었습니다. 이제 관문을 마칠 때마다 순위가 반영됩니다.';sfx('good');renderRank(true);loadRank();}
+      try{const r0=await registerCode(v);applyProfile(r0);renderSetup();RK.meErr='';RK.notice='인증번호가 등록되었습니다. 이제 관문을 마칠 때마다 순위가 반영됩니다.';sfx('good');renderRank(true);loadRank();}
       catch(err){msg.className='formmsg err';msg.textContent=errText(err);btn.disabled=false;}
     };
   }else{
@@ -1342,7 +1381,7 @@ function renderMe(meBox){
       <div class="line">총점 <b>${r.total}점</b> · 통과 관문 <span class="dots">${ORDER.map((_,i)=>`<i class="${i<(r.passed||0)?'on':''}"></i>`).join('')}</span> ${r.passed||0}/7 · 적정 답변 ${r.goods||0}개</div>
       <div class="tip">${gapTip(r)}</div>`:`<div class="line">아직 기록이 없어요. 관문을 하나 마치면 랭킹에 이름이 올라갑니다.</div>`}
       <div class="tip">인증번호 ${maskCode(P.code)} <button class="linkbtn" id="rkChange" type="button">다른 번호로 변경</button></div></div>`;
-    $('rkChange').onclick=()=>{P.code='';P.rk=null;P.pending=[];RK.me=null;RK.notice='';save();renderRank(true);renderBanner();};
+    $('rkChange').onclick=()=>{P.code='';P.rk=null;P.pending=[];P.cleared={};P.tot=0;P.good=0;RK.me=null;RK.notice='';save();renderRank(true);renderBanner();};
   }
 }
 function renderList(list){
@@ -1368,7 +1407,7 @@ function finish(){
   save();
   const all=ORDER.every(k=>P.cleared[k]);
   const counts={good:0,mid:0,bad:0};G.rec.forEach(x=>counts[x.g]++);
-  queueRun({nick:P.name||'새내기',costume:P.c,stage:d,power:G.power,goods:counts.good,npc:G.s.npc.n,run:Date.now().toString(36)+Math.random().toString(36).slice(2,8)});
+  queueRun({nick:P.name||'새내기',costume:P.c,g:P.g,stage:d,power:G.power,goods:counts.good,npc:G.s.npc.n,run:Date.now().toString(36)+Math.random().toString(36).slice(2,8)});
   $('scrResult').innerHTML=`
    <div class="eyebrow">${D[d].n} 현장 · ${esc(G.s.npc.n)}</div>
    <div style="margin:0 auto;width:110px">${me(pass?'good':'bad')}</div>
@@ -1440,10 +1479,9 @@ try{console.info('%c재난소통 영웅 · © 2026 KOREA CONTENTS LAB. All right
 /* ===================== 시작 ===================== */
 sndUI();
 renderSetup();
-if(P.name){renderMap();show('scrMap');}else show('scrSetup');
+show('scrSetup');
 renderBanner();
 if(location.hash==='#ranking')openRank();
-else if(P.code&&P.pending&&P.pending.length)flushPending().then(renderBanner).catch(()=>{});
 </script>
 
 </body>
