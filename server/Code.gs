@@ -567,3 +567,23 @@ function sampleSchool() {
   Logger.log(JSON.stringify({ folder: r.folder.getUrl(), link: schoolLink_(r.school.key), issue: i, report: rep.url }));
   return { folder: r.folder.getUrl(), link: schoolLink_(r.school.key), issue: i, report: rep.url };
 }
+
+/* 처음 한 번: 공통 자료(협업 계약서 · 교육안 PPT)를 '00_공통 자료'에 저장하고 샘플 학교를 만듭니다.
+   편집기에서 이 함수를 실행하면 드라이브 · 문서 권한 승인 창이 뜹니다. */
+function setupSchoolDrive() {
+  const SRC = 'https://raw.githubusercontent.com/ktvwin-pixel/disaster-game/f7d96190c87c51f40711684e4bac40cec85d5911/';
+  const files = [['a2.docx', '재난소통_영웅_협업_계약서.docx', MimeType.MICROSOFT_WORD], ['a1.pptx', '재난소통_영웅_교육안.pptx', MimeType.MICROSOFT_POWERPOINT]];
+  const common = folderIn_(root_(), COMMON_NAME);
+  const done = [];
+  files.forEach(([src, name, mime]) => {
+    if (common.getFilesByName(name).hasNext()) { done.push(name + ' (이미 있음)'); return; }
+    const res = UrlFetchApp.fetch(SRC + src, { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) { done.push(name + ' 실패 ' + res.getResponseCode()); return; }
+    common.createFile(res.getBlob().setName(name).setContentType(mime));
+    done.push(name);
+  });
+  ensureHeads_();
+  const sample = sampleSchool();
+  Logger.log(JSON.stringify({ common: done, sample: sample }));
+  return { common: done, sample: sample };
+}
