@@ -117,7 +117,7 @@ function submit_(p) {
   const stage = String(p.stage || '');
   if (STAGES.indexOf(stage) < 0) return { ok: false, error: 'bad_stage' };
   const power = Math.max(0, Math.min(10, parseInt(p.power, 10) || 0));
-  const goods = Math.max(0, Math.min(5, parseInt(p.goods, 10) || 0));
+  const goods = Math.max(0, Math.min(8, parseInt(p.goods, 10) || 0));
   const run = String(p.run || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
   const nick = cleanNick_(p.nick);
   const costume = COSTUME_KO[p.costume] || '';
