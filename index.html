@@ -144,6 +144,28 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .checks li{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--panel2);color:var(--muted)}
 .checks li.hit{background:rgba(62,213,152,.16);color:var(--ok)}
 .model{background:var(--night);border-radius:8px;padding:8px 10px;color:var(--ink)}
+.fbmore{display:flex;flex-direction:column;gap:7px}
+.fbtog{display:none;margin-left:auto;font-family:var(--body);font-size:12px;color:var(--muted)}
+.fb.past{padding:7px 12px;cursor:pointer}
+.fb.past .grade{font-size:15px}
+.fb.past .fbtog{display:inline}
+.fb.past .fbmore{display:none}
+.fb.past.open .fbmore{display:flex}
+.fb.past.open .fbtog{font-size:0}.fb.past.open .fbtog::after{content:'접기 ▴';font-size:12px}
+.turnsep{align-self:center;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted);padding:2px 10px;border:1px solid var(--line);border-radius:999px;margin-top:4px}
+.turnsep.press{color:#ff8a80;border-color:#7a3b3b}
+.msg.npc.now{box-shadow:0 0 0 2px var(--signal)}
+.msg.npc.react{opacity:.85;font-size:.92em}
+.scenetog{position:absolute;right:8px;top:8px;z-index:3;font-family:var(--body);font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.4);background:rgba(10,14,28,.72);color:#fff}
+.scene{transition:height .25s}
+.scene.mini{height:clamp(120px,21dvh,190px)}
+.scene.mini .caption{display:none}
+.scene:not(.mini) .scenetog{top:auto;bottom:8px;left:50%;right:auto;transform:translateX(-50%)}
+.scene.mini .actor{height:74%;bottom:3%}
+.scene.mini .actor.kid{height:60%}
+.scene.mini .nametag{font-size:10px}
+@media (min-width:700px) and (min-aspect-ratio:1/1){.scenetog{display:none}}
+@media (max-height:520px) and (orientation:landscape){.scenetog{display:none}}
 .fb,.model{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .model .mcv{font-size:13px;margin-top:2px}
 .model canvas{display:block;pointer-events:none}
@@ -1139,7 +1161,9 @@ function startStage(d){
   $('scene').innerHTML=sceneSVG(SCENE_BG[s.id]||d,'p')+
     `<div class="actor me"><div id="aMe" style="width:100%;height:100%">${me()}</div><span class="nametag">${esc(P.name)}</span></div>`+
     `<div class="actor npc ${s.npc.kid?'kid':''}"><div id="aNpc" style="width:100%;height:100%">${npcAvatar(s.npc,'bad')}</div><span class="nametag" id="tagNpc">${esc(s.npc.n)}</span></div>`+
-    `<div class="caption" id="caption" aria-live="polite"><span class="who">상황</span>${esc(s.sit)}</div>`;
+    `<div class="caption" id="caption" aria-live="polite"><span class="who">상황</span>${esc(s.sit)}</div>`+
+    `<button class="scenetog" id="sceneTog" type="button">장면 작게</button>`;
+  G.big=null;$('sceneTog').onclick=()=>{G.big=$('scene').classList.contains('mini');setMini(!G.big);};
   $('log').innerHTML=`<div class="sit"><b>상황</b> ${esc(s.sit)}<br><b>대상</b> ${esc(s.npc.n)} · ${esc(s.npc.r)}</div>`;
   $('inAns').value='';$('charCount').textContent='0자';$('hintBox').hidden=true;voiceMsg('');
   show('scrPlay');updHud();
@@ -1156,7 +1180,7 @@ function updHud(){
 function setCaption(text,react){const c=$('caption');if(!c)return;c.className='caption'+(react?' react':'');c.innerHTML=`<span class="who">${esc(spk().n)}${react?' · 반응':''}</span>${esc(text)}`;c.scrollTop=0;}
 function addNpc(text,react){
   setCaption(text,react);
-  const el=document.createElement('div');el.className='msg npc'+(isPress()?' press':'');
+  const el=document.createElement('div');el.className='msg npc'+(isPress()?' press':'')+(react?' react':' now');
   el.innerHTML=`<div class="who">${esc(spk().n)}${isPress()?' · '+esc(G.rep.r):''}</div>${esc(text)}`;$('log').appendChild(el);scrollLog();
 }
 function scrollLog(){const l=$('log');l.scrollTop=l.scrollHeight;}
@@ -1170,8 +1194,13 @@ function enterPress(){
   const cap=$('caption');if(cap){cap.className='caption';cap.innerHTML=`<span class="who">언론 취재</span>${esc(G.rep.r)} ${esc(G.rep.n)}가 다가옵니다.`;}
   sfx('mid');updHud();
 }
+const WIDE=()=>matchMedia('(min-width:700px) and (min-aspect-ratio:1/1), (max-height:520px) and (orientation:landscape)').matches;
+function setMini(on){const sc=$('scene');if(!sc)return;sc.classList.toggle('mini',on&&!WIDE());const b=$('sceneTog');if(b)b.textContent=sc.classList.contains('mini')?'장면 크게':'장면 작게';scrollLog();}
 function askTurn(){
   const tq=G.t[G.turn];
+  document.querySelectorAll('#log .fb:not(.past)').forEach(x=>x.classList.add('past'));
+  document.querySelectorAll('#log .msg.now').forEach(x=>x.classList.remove('now'));
+  const sep=document.createElement('div');sep.className='turnsep'+(tq.press?' press':'');sep.textContent=`대화 ${G.turn+1}/${G.t.length}${tq.press?' · 기자 질문':''}`;$('log').appendChild(sep);
   if(tq.press&&!G.pressOn)enterPress();
   const ty=document.createElement('div');ty.className='typing';ty.textContent=spk().n+' 님이 '+(tq.press?'질문하는 중…':'말하는 중…');$('log').appendChild(ty);scrollLog();
   setDock(false);
@@ -1252,6 +1281,7 @@ function submit(){
   if(G.busy)return;
   const ans=$('inAns').value.trim(); if(!ans){$('inAns').focus();return;}
   setDock(false);
+  if(G.big===null)setMini(true);
   const tq=G.t[G.turn]; const r=grade(ans,tq);
   const m=document.createElement('div');m.className='msg me';m.innerHTML=`<div class="who">${esc(P.name)} ${rank()}</div>${esc(ans)}`;$('log').appendChild(m);
   $('inAns').value='';$('charCount').textContent='0자';$('hintBox').hidden=true;voiceMsg('');
@@ -1263,10 +1293,11 @@ function submit(){
   updHud();
   const why=r.neg?'무책임하거나 부정적인 표현이 들어 있어 상대가 불안해집니다.':r.len<6?'답변이 너무 짧아 상대가 행동할 수 없습니다.':'';
   const fb=document.createElement('div');fb.className='fb '+r.g;
-  fb.innerHTML=`<div class="grade">${GL[r.g][0]} <span class="chip ${r.g==='good'?'done':'todo'}" style="font-family:var(--body)">파워 ${GL[r.g][1]}</span></div>
-   ${why?`<div>${why}</div>`:''}
+  fb.innerHTML=`<div class="grade">${GL[r.g][0]} <span class="chip ${r.g==='good'?'done':'todo'}" style="font-family:var(--body)">파워 ${GL[r.g][1]}</span><span class="fbtog">채점 내용 펼치기 ▾</span></div>
+   <div class="fbmore">${why?`<div>${why}</div>`:''}
    <ul class="checks">${r.groups.map(g=>`<li class="${g.ok?'hit':''}">${g.ok?'✓':'○'} ${g.lab}</li>`).join('')}<li class="${r.emp?'hit':''}">${r.emp?'✓':'○'} ${tq.press?'위로·정중 표현':'공감·안심 표현'}</li></ul>
-   <div class="model"><b>모범 답변 예시</b><div class="mcv"></div><div class="hintnote">모범 답변은 복사할 수 없어요.</div></div>`;
+   <div class="model"><b>모범 답변 예시</b><div class="mcv"></div><div class="hintnote">모범 답변은 복사할 수 없어요.</div></div></div>`;
+  fb.onclick=()=>{if(fb.classList.contains('past'))fb.classList.toggle('open');};
   G.shown=(G.shown||[]).concat(tq[2]);
   setTimeout(()=>{$('log').appendChild(fb);paintText(fb.querySelector('.mcv'),tq[2],{color:'#eef1f8'});addNpc(pick((tq.press?REACT_P:REACT)[r.g]),true);
     const last=G.turn===G.t.length-1;
