@@ -144,6 +144,9 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .checks li{font-size:12px;padding:3px 8px;border-radius:999px;background:var(--panel2);color:var(--muted)}
 .checks li.hit{background:rgba(62,213,152,.16);color:var(--ok)}
 .model{background:var(--night);border-radius:8px;padding:8px 10px;color:var(--ink)}
+.fb,.model{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.model .mcv{font-size:13px;margin-top:2px}
+.model canvas{display:block;pointer-events:none}
 .model b{color:var(--signal);font-size:11px;letter-spacing:.08em;display:block}
 .typing{align-self:flex-start;color:var(--muted);font-size:13px}
 .dock{background:var(--panel);padding-block:10px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line)}
@@ -1178,6 +1181,27 @@ function setDock(on){if(!on)stopMic();$('btnMic').disabled=!on;$('inAns').disabl
 $('inAns').oninput=e=>$('charCount').textContent=e.target.value.length+'자';
 $('inAns').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();submit();}};
 $('btnSend').onclick=submit;
+/* 글자를 그림(canvas)으로 그려 선택·복사가 되지 않게 합니다 */
+function paintText(box,text,o={}){
+  if(!box)return;box.innerHTML='';
+  const cv=document.createElement('canvas');cv.setAttribute('role','img');cv.setAttribute('aria-label','복사할 수 없는 안내 문구');
+  const W=Math.max(200,box.clientWidth||box.parentElement.clientWidth-20),dpr=Math.min(3,window.devicePixelRatio||1);
+  const fs=Math.round(parseFloat(getComputedStyle(box).fontSize)||14),ff=getComputedStyle(document.body).fontFamily,ctx=cv.getContext('2d');
+  ctx.font=`${fs}px ${ff}`;const lines=[];let line='';
+  const fit=t=>ctx.measureText(t).width<=W-2;
+  for(const w of text.split(/\s+/).filter(Boolean)){
+    const cand=line?line+' '+w:w;
+    if(fit(cand)){line=cand;continue;}
+    if(line)lines.push(line);
+    if(fit(w)){line=w;continue;}
+    line='';for(const ch of w){if(fit(line+ch))line+=ch;else{lines.push(line);line=ch;}}
+  }
+  if(line)lines.push(line);
+  const lh=Math.round(fs*1.55),H=lines.length*lh+4;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.scale(dpr,dpr);ctx.textBaseline='top';ctx.font=`${fs}px ${ff}`;ctx.fillStyle=o.color||'#eef1f8';
+  lines.forEach((l,i)=>ctx.fillText(l,0,2+i*lh));box.appendChild(cv);
+}
 /* 핵심 포인트: 글자 대신 그림(canvas)으로 그려 선택·복사가 되지 않게 합니다 */
 function drawHint(tq){
   const h=$('hintBox');h.innerHTML='';
@@ -1199,12 +1223,15 @@ function drawHint(tq){
 }
 $('btnHint').onclick=()=>{const tq=G.t[G.turn];const h=$('hintBox');h.hidden=!h.hidden;if(!h.hidden)drawHint(tq);};
 ['copy','cut','contextmenu','selectstart','dragstart'].forEach(ev=>$('hintBox').addEventListener(ev,e=>e.preventDefault()));
+['copy','cut','contextmenu','selectstart','dragstart'].forEach(ev=>$('log').addEventListener(ev,e=>{if(e.target.closest&&e.target.closest('.fb'))e.preventDefault();}));
 /* 답변창에 핵심 포인트를 붙여 넣으면 막습니다 */
 function hasHintText(txt){
   if(!G||!G.t[G.turn])return false;const t=norm(txt||'');if(!t)return false;
+  const shown=(G.shown||[]).concat(G.t[G.turn][2]).map(norm);
+  if(t.length>=8&&shown.some(m=>m.includes(t)||t.includes(m)||[...Array(Math.max(0,t.length-11))].some((_,i)=>m.includes(t.slice(i,i+12)))))return true;
   return G.t[G.turn][1].some(g=>{const l=norm(g[0].replace(/\(.*?\)/g,''));return l.length>=3&&t.includes(l);})||t.includes(norm('핵심 포인트'));
 }
-function blockPaste(e,txt){if(hasHintText(txt)){e.preventDefault();voiceMsg('<b>핵심 포인트는 붙여 넣을 수 없어요.</b> 포인트를 보고 내 말로 바꿔 직접 입력하거나 마이크로 말해 주세요.');return true;}return false;}
+function blockPaste(e,txt){if(hasHintText(txt)){e.preventDefault();voiceMsg('<b>핵심 포인트와 모범 답변은 붙여 넣을 수 없어요.</b> 포인트를 보고 내 말로 바꿔 직접 입력하거나 마이크로 말해 주세요.');return true;}return false;}
 $('inAns').addEventListener('paste',e=>blockPaste(e,(e.clipboardData||window.clipboardData).getData('text')));
 $('inAns').addEventListener('drop',e=>blockPaste(e,e.dataTransfer&&e.dataTransfer.getData('text')));
 $('inAns').addEventListener('beforeinput',e=>{if(/insertFrom(Paste|Drop)/.test(e.inputType||''))blockPaste(e,e.data||(e.dataTransfer&&e.dataTransfer.getData('text')));});
@@ -1239,8 +1266,9 @@ function submit(){
   fb.innerHTML=`<div class="grade">${GL[r.g][0]} <span class="chip ${r.g==='good'?'done':'todo'}" style="font-family:var(--body)">파워 ${GL[r.g][1]}</span></div>
    ${why?`<div>${why}</div>`:''}
    <ul class="checks">${r.groups.map(g=>`<li class="${g.ok?'hit':''}">${g.ok?'✓':'○'} ${g.lab}</li>`).join('')}<li class="${r.emp?'hit':''}">${r.emp?'✓':'○'} ${tq.press?'위로·정중 표현':'공감·안심 표현'}</li></ul>
-   <div class="model"><b>모범 답변 예시</b>${esc(tq[2])}</div>`;
-  setTimeout(()=>{$('log').appendChild(fb);addNpc(pick((tq.press?REACT_P:REACT)[r.g]),true);
+   <div class="model"><b>모범 답변 예시</b><div class="mcv"></div><div class="hintnote">모범 답변은 복사할 수 없어요.</div></div>`;
+  G.shown=(G.shown||[]).concat(tq[2]);
+  setTimeout(()=>{$('log').appendChild(fb);paintText(fb.querySelector('.mcv'),tq[2],{color:'#eef1f8'});addNpc(pick((tq.press?REACT_P:REACT)[r.g]),true);
     const last=G.turn===G.t.length-1;
     const nb=document.createElement('button');nb.className='btn';nb.style.alignSelf='stretch';nb.textContent=last?'훈련 결과 보기':'다음 대화';
     nb.onclick=()=>{nb.remove();if(last)finish();else{G.turn++;updHud();askTurn();}};
