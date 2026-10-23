@@ -14,7 +14,25 @@
  *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
-/* 처음 실행용: 기관 유형 열을 채우고 등록된 기관 목록을 기록에 남김 (권한 추가 없음) */
+/* 한 번만 실행: 기관용 계약서 · 운영 양식을 00_공통 자료에 넣고, 기존 기관 폴더 04에 운영 양식 복사 */
+function addOrgForms() {
+  ensureHeads_();
+  const SHA = '37cc00013346fb756556a24b1babb3c265fc8e3f', BASE = 'https://raw.githubusercontent.com/ktvwin-pixel/disaster-game/' + SHA + '/';
+  const common = folderIn_(root_(), COMMON_NAME), out = [];
+  [['org.docx', '재난소통_영웅_협업_계약서_기관용.docx'], ['forms.docx', '재난소통_영웅_운영_양식.docx']].forEach(([src, name]) => {
+    if (common.getFilesByName(name).hasNext()) { out.push(name + ' 이미 있음'); return; }
+    const blob = UrlFetchApp.fetch(BASE + src).getBlob().setName(name);
+    common.createFile(blob); out.push(name + ' ' + blob.getBytes().length + 'B');
+  });
+  const forms = common.getFilesByName('재난소통_영웅_운영_양식.docx').next();
+  schools_().forEach(sc => {
+    const to = folderIn_(schoolFolder_(sc), SUB[3]);
+    if (!to.getFilesByName(forms.getName()).hasNext()) { forms.makeCopy(forms.getName(), to); out.push(sc.name + ' 04 복사'); }
+  });
+  Logger.log(out.join(' | '));
+}
+
+/* 기관 유형 열을 채우고 등록된 기관 목록을 기록에 남김 */
 function checkSetup() {
   ensureHeads_();
   Logger.log(schoolList_());
