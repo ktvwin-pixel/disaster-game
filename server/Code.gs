@@ -470,25 +470,31 @@ function issueSchool_(name, n) {
   t.setColumnWidths(1, 1, 50); t.setColumnWidth(2, 170); t.setColumnWidth(3, 90); t.setColumnWidth(4, 160); t.setColumnWidth(5, 100);
   t.setRowHeights(5, codes.length, 26); t.setFrozenRows(4);
   DriveApp.getFileById(ss.getId()).moveTo(dir);
-  // 카드 문서 (한 장에 2칸씩, 오려서 학생에게)
-  const doc = DocumentApp.create(title + '_카드');
-  const b = doc.getBody(); b.setMarginTop(36).setMarginBottom(36).setMarginLeft(40).setMarginRight(40);
-  b.appendParagraph(sc.name + ' · 재난소통 영웅 인증번호 카드  (점선대로 오려 나눠 주세요)').setFontSize(10).setForegroundColor('#5b6478');
-  const cell = c => sc.name + '\n' + c + '\n' + schoolLink_(sc.key) + '\n번호를 넣으면 기록이 이어져요. 잃어버리지 마세요.';
-  const rows2 = [];
-  for (let i = 0; i < codes.length; i += 2) rows2.push([cell(codes[i]), codes[i + 1] ? cell(codes[i + 1]) : '']);
-  const tb = b.appendTable(rows2);
-  tb.setBorderColor('#9aa3b5');
-  const st = {}; st[DocumentApp.Attribute.FONT_SIZE] = 9; st[DocumentApp.Attribute.FONT_FAMILY] = 'Malgun Gothic'; tb.setAttributes(st);
-  for (let r = 0; r < tb.getNumRows(); r++) for (let k = 0; k < tb.getRow(r).getNumCells(); k++) {
-    const ce = tb.getCell(r, k); const tx = ce.editAsText(); const s0 = tx.getText();
-    ce.setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(10);
-    const a = s0.indexOf('\n') + 1, z = s0.indexOf('\n', a);
-    if (a > 0 && z > a) tx.setFontSize(a, z - 1, 15).setBold(a, z - 1, true).setFontFamily(a, z - 1, 'Roboto Mono');
+  cardsTab_(ss, sc, codes);
+  return { n: n, list: ss.getUrl(), cards: ss.getUrl() + '#gid=' + ss.getSheetByName('카드').getSheetId(), folder: dir.getUrl() };
+}
+
+/* 카드 탭: 한 줄에 2장, 카드 1장 = 4칸 (학교 · 번호 · 주소 · 안내). 인쇄 후 점선대로 오려 나눠 줌 */
+function cardsTab_(ss, sc, codes) {
+  const t = ss.getSheetByName('카드') || ss.insertSheet('카드');
+  const rows = [];
+  for (let i = 0; i < codes.length; i += 2) {
+    const a = codes[i], b = codes[i + 1] || '';
+    rows.push([sc.name, '', b ? sc.name : '']);
+    rows.push([a, '', b]);
+    rows.push([schoolLink_(sc.key), '', b ? schoolLink_(sc.key) : '']);
+    rows.push(['번호를 넣으면 기록이 이어져요. 잃어버리지 마세요.', '', b ? '번호를 넣으면 기록이 이어져요. 잃어버리지 마세요.' : '']);
+    rows.push(['', '', '']);
   }
-  doc.saveAndClose();
-  DriveApp.getFileById(doc.getId()).moveTo(dir);
-  return { n: n, list: ss.getUrl(), cards: doc.getUrl(), folder: dir.getUrl() };
+  t.getRange(1, 1, rows.length, 3).setValues(rows).setFontSize(9).setFontColor('#4a5466').setVerticalAlignment('middle');
+  t.setColumnWidth(1, 330); t.setColumnWidth(2, 24); t.setColumnWidth(3, 330);
+  for (let r = 0; r < rows.length; r += 5) {
+    t.getRange(r + 2, 1, 1, 3).setFontSize(18).setFontWeight('bold').setFontColor('#0f3a40').setFontFamily('Roboto Mono');
+    t.getRange(r + 1, 1, 1, 3).setFontWeight('bold').setFontColor('#1b8a87');
+    [1, 3].forEach(c => { if (t.getRange(r + 2, c).getValue()) t.getRange(r + 1, c, 4, 1).setBorder(true, true, true, true, null, null, '#9aa3b5', SpreadsheetApp.BorderStyle.DASHED); });
+    t.setRowHeight(r + 2, 34); t.setRowHeight(r + 5, 14);
+  }
+  return t;
 }
 
 /* ③ 학교 현황 보고서: 03 폴더에 날짜별 시트 */
@@ -543,7 +549,7 @@ function menuIssueSchool() {
   try {
     SpreadsheetApp.getActiveSpreadsheet().toast('인증번호와 명단을 만드는 중입니다. 1,000개 기준 1~2분 걸립니다.', '학교 관리', 30);
     const r = issueSchool_(name, n);
-    ui.alert('발급 완료', r.n + '개를 만들었습니다.\n\n인쇄용 명단\n' + r.list + '\n\n오려 쓰는 카드\n' + r.cards + '\n\n폴더\n' + r.folder, ui.ButtonSet.OK);
+    ui.alert('발급 완료', r.n + '개를 만들었습니다.\n\n인쇄용 명단 (명단 탭 · 카드 탭)\n' + r.list + '\n\n오려 쓰는 카드\n' + r.cards + '\n\n폴더\n' + r.folder, ui.ButtonSet.OK);
   } catch (e) { ui.alert('발급하지 못했습니다', String(e.message || e), ui.ButtonSet.OK); }
 }
 function menuReportSchool() {
@@ -568,22 +574,13 @@ function sampleSchool() {
   return { folder: r.folder.getUrl(), link: schoolLink_(r.school.key), issue: i, report: rep.url };
 }
 
-/* 처음 한 번: 공통 자료(협업 계약서 · 교육안 PPT)를 '00_공통 자료'에 저장하고 샘플 학교를 만듭니다.
-   편집기에서 이 함수를 실행하면 드라이브 · 문서 권한 승인 창이 뜹니다. */
-function setupSchoolDrive() {
-  const SRC = 'https://raw.githubusercontent.com/ktvwin-pixel/disaster-game/f7d96190c87c51f40711684e4bac40cec85d5911/';
-  const files = [['a2.docx', '재난소통_영웅_협업_계약서.docx', MimeType.MICROSOFT_WORD], ['a1.pptx', '재난소통_영웅_교육안.pptx', MimeType.MICROSOFT_POWERPOINT]];
-  const common = folderIn_(root_(), COMMON_NAME);
-  const done = [];
-  files.forEach(([src, name, mime]) => {
-    if (common.getFilesByName(name).hasNext()) { done.push(name + ' (이미 있음)'); return; }
-    const res = UrlFetchApp.fetch(SRC + src, { muteHttpExceptions: true });
-    if (res.getResponseCode() !== 200) { done.push(name + ' 실패 ' + res.getResponseCode()); return; }
-    common.createFile(res.getBlob().setName(name).setContentType(mime));
-    done.push(name);
-  });
-  ensureHeads_();
-  const sample = sampleSchool();
-  Logger.log(JSON.stringify({ common: done, sample: sample }));
-  return { common: done, sample: sample };
+/* 샘플 학교 마무리: 이미 만든 명단 시트에 카드 탭을 붙이고 현황 보고서를 만듦 */
+function finishSample() {
+  const sc = schoolByName_('샘플초등학교');
+  const codes = sheet_('codes').getDataRange().getValues().slice(1).filter(r => String(r[6] || '').trim() === sc.name).map(r => String(r[0]));
+  const it = folderIn_(schoolFolder_(sc), SUB[1]).getFilesByType(MimeType.GOOGLE_SHEETS);
+  let done = 'no sheet';
+  if (it.hasNext()) { const ss = SpreadsheetApp.openById(it.next().getId()); cardsTab_(ss, sc, codes); done = ss.getUrl(); }
+  const rep = reportSchool_(sc.name);
+  Logger.log(JSON.stringify({ cards: done, report: rep.url, link: schoolLink_(sc.key) }));
 }
