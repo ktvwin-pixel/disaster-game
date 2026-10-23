@@ -1862,7 +1862,7 @@ function renderTabs(){
   $('rkTitle').textContent=sc&&RK.tab==='school'?sc.name+' 랭킹':'재난소통 랭킹';
   if(!sc){t.hidden=true;return;}
   t.hidden=false;
-  t.innerHTML=`<button type="button" data-tab="school" aria-pressed="${RK.tab==='school'}">우리 학교</button><button type="button" data-tab="all" aria-pressed="${RK.tab!=='school'}">전체 랭킹</button>`;
+  t.innerHTML=`<button type="button" data-tab="school" aria-pressed="${RK.tab==='school'}">${ourWord()}</button><button type="button" data-tab="all" aria-pressed="${RK.tab!=='school'}">전체 랭킹</button>`;
   t.querySelectorAll('button').forEach(b=>b.onclick=()=>{RK.tab=b.dataset.tab;RK.sig='';renderRank(true);});
 }
 function renderSchool(meBox,list){
@@ -1870,8 +1870,8 @@ function renderSchool(meBox,list){
   meBox.innerHTML=`<div class="rankcard ${r&&r.rank?'':'ghost'}">
     <div class="eyebrow">${esc(sc.name)} · 참여 현황</div>
     <div class="schoolstats"><span><b>${sc.count}명</b><small>랭킹 참여</small></span><span><b>${sc.started}/${sc.issued}</b><small>번호 사용</small></span><span><b>${sc.avgPassed}</b><small>평균 관문</small></span><span><b>${sc.goods}</b><small>적정 답변</small></span></div>
-    ${r&&r.rank?`<div class="line">내 학교 순위 <b>${r.rank}위</b> / ${r.count}명 · 총점 ${r.total}점</div>`:P.code?'':`<div class="tip">학교에서 받은 인증번호를 넣으면 내 순위도 함께 보여요.</div>`}</div>`;
-  if(!sc.top.length){list.innerHTML=`<div class="rkstate">아직 우리 학교 랭킹이 비어 있어요. 첫 번째 주인공이 되어 보세요!</div>`;return;}
+    ${r&&r.rank?`<div class="line">내 학교 순위 <b>${r.rank}위</b> / ${r.count}명 · 총점 ${r.total}점</div>`:P.code?'':`<div class="tip">학교나 기관에서 받은 인증번호를 넣으면 내 순위도 함께 보여요.</div>`}</div>`;
+  if(!sc.top.length){list.innerHTML=`<div class="rkstate">아직 ${ourWord()} 랭킹이 비어 있어요. 첫 번째 주인공이 되어 보세요!</div>`;return;}
   renderList(list,sc.top,sc.count);
 }
 function renderList(list,top,count){
@@ -1969,7 +1969,8 @@ try{console.info('%c재난소통 영웅 · © 2026 KOREA CONTENTS LAB. All right
 
 /* ===================== 시작 ===================== */
 /* 학교 전용 주소: …/disaster-game/?s=약칭  (드라이브 폴더 '학교명 (약칭)'과 같은 약칭) */
-const SCHOOL={key:'',name:''};
+const SCHOOL={key:'',name:'',type:''};
+const ourWord=()=>SCHOOL.type&&SCHOOL.type!=='학교'?'우리 기관':'우리 학교';
 (function(){
   let k='';try{k=new URLSearchParams(location.search).get('s')||'';}catch(e){}
   const h=/[#&]school=([a-z0-9-]+)/i.exec(location.hash);if(!k&&h)k=h[1];
@@ -1977,8 +1978,8 @@ const SCHOOL={key:'',name:''};
   if(!SCHOOL.key)return;
   api({action:'school',s:SCHOOL.key}).then(r=>{
     const c=$('schoolChip');
-    if(r&&r.ok&&r.name){SCHOOL.name=r.name;c.innerHTML=`<b>${esc(r.name)}</b> 전용 훈련 <button class="linkbtn" type="button" data-rank>우리 학교 랭킹 보기</button>`;c.hidden=false;}
-    else{SCHOOL.key='';c.textContent='학교 주소를 확인하지 못했어요. 일반 훈련으로 진행합니다.';c.hidden=false;}
+    if(r&&r.ok&&r.name){SCHOOL.name=r.name;SCHOOL.type=r.type||'학교';c.innerHTML=`<b>${esc(r.name)}</b> 전용 훈련 <button class="linkbtn" type="button" data-rank>${ourWord()} 랭킹 보기</button>`;c.hidden=false;}
+    else{SCHOOL.key='';c.textContent='기관 전용 주소를 확인하지 못했어요. 일반 훈련으로 진행합니다.';c.hidden=false;}
   }).catch(()=>{});
 })();
 $('spApply').innerHTML=applyBox('sp');bindApply('sp');

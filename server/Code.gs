@@ -14,15 +14,10 @@
  *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
-/* 샘플 학교 마무리: 이미 만든 명단 시트에 카드 탭을 붙이고 현황 보고서를 만듦 */
-function finishSample() {
-  const sc = schoolByName_('샘플초등학교');
-  const codes = sheet_('codes').getDataRange().getValues().slice(1).filter(r => String(r[6] || '').trim() === sc.name).map(r => String(r[0]));
-  const it = folderIn_(schoolFolder_(sc), SUB[1]).getFilesByType(MimeType.GOOGLE_SHEETS);
-  let done = 'no sheet';
-  if (it.hasNext()) { const ss = SpreadsheetApp.openById(it.next().getId()); cardsTab_(ss, sc, codes); done = ss.getUrl(); }
-  const rep = reportSchool_(sc.name);
-  Logger.log(JSON.stringify({ cards: done, report: rep.url, link: schoolLink_(sc.key) }));
+/* 처음 실행용: 기관 유형 열을 채우고 등록된 기관 목록을 기록에 남김 (권한 추가 없음) */
+function checkSetup() {
+  ensureHeads_();
+  Logger.log(schoolList_());
 }
 
 const STAGES = ['flood', 'fire', 'quake', 'blast', 'heat', 'collapse', 'virus'];
@@ -35,7 +30,7 @@ const TOP = 50;          // 게임에 보여줄 상위 인원
 
 const SHEETS = {
   codes: { name: '인증번호', head: ['인증번호', '발급 대상(메모)', '상태', '발급일', '최초 사용일', '닉네임', '학교'] },
-  schools: { name: '학교목록', head: ['학교명', '약칭(주소)', '담당 교사', '계약 기간', '상태', '발급 수', '드라이브 폴더', '학교 전용 주소', '등록일'] },
+  schools: { name: '학교목록', head: ['학교명', '약칭(주소)', '담당자', '계약 기간', '상태', '발급 수', '드라이브 폴더', '기관 전용 주소', '등록일', '유형'] },
   rank: { name: '랭킹', head: ['인증번호', '닉네임', '복장', '침수', '화재', '지진', '폭발', '폭염', '건물붕괴', '감염병확산', '통과 관문 수', '적정 답변 누적', '훈련 횟수', '관문 점수', '총점', '최근 훈련', '성별'] },
   log: { name: '훈련기록', head: ['시각', '인증번호', '닉네임', '재난', '대상', '최종 파워', '통과', '적정 답변', '훈련 ID'] },
   req: { name: '인증신청', head: ['신청 시각', '이름', '소속', '이메일', '상태', '인증번호', '처리 시각', '메모'] },
@@ -59,7 +54,7 @@ function doGet(e) {
     else if (p.action === 'submit') out = submit_(p);
     else if (p.action === 'rank') out = rank_(p.code, p.school);
     else if (p.action === 'apply') out = apply_(p);
-    else if (p.action === 'school') { const sc = schoolByKey_(p.s); out = sc ? { ok: true, name: sc.name, key: sc.key } : { ok: false, error: 'no_school' }; }
+    else if (p.action === 'school') { const sc = schoolByKey_(p.s); out = sc ? { ok: true, name: sc.name, key: sc.key, type: sc.type } : { ok: false, error: 'no_school' }; }
     else if (p.action === 'config') out = { ok: true, open: conf_('신청 받기') !== '끄기', mode: conf_('발급 방식') === '승인' ? 'approve' : 'auto' };
     else out = { ok: true, service: '재난소통 영웅 랭킹', holder: 'KOREA CONTENTS LAB' };
   } catch (err) {
@@ -352,12 +347,12 @@ function onOpen() {
     .addSeparator()
     .addItem('랭킹 초기화(새 시즌)', 'resetRanking')
     .addToUi();
-  SpreadsheetApp.getUi().createMenu('학교 관리')
-    .addItem('① 계약 학교 등록 (드라이브 폴더 만들기)', 'menuRegisterSchool')
-    .addItem('② 학교별 인증번호 발급 (명단·카드 만들기)', 'menuIssueSchool')
-    .addItem('③ 학교 현황 보고서 만들기', 'menuReportSchool')
+  SpreadsheetApp.getUi().createMenu('기관 관리')
+    .addItem('① 계약 기관 등록 (학교·기업·공공기관)', 'menuRegisterSchool')
+    .addItem('② 기관별 인증번호 발급 (명단·카드 만들기)', 'menuIssueSchool')
+    .addItem('③ 기관 현황 보고서 만들기', 'menuReportSchool')
     .addSeparator()
-    .addItem('학교 전용 주소 보기', 'menuSchoolLink')
+    .addItem('기관 전용 주소 보기', 'menuSchoolLink')
     .addItem('샘플 학교 만들기 (연습용)', 'sampleSchool')
     .addToUi();
 }
@@ -387,6 +382,11 @@ function resetRanking() {
 const ROOT_NAME = '재난소통 영웅 학교 관리';
 const COMMON_NAME = '00_공통 자료';
 const SUB = ['01_계약서', '02_인증번호 명단', '03_랭킹·참여 현황', '04_교육자료'];
+function common_has_(re) {
+  const it = folderIn_(root_(), COMMON_NAME).getFiles();
+  while (it.hasNext()) { const n = it.next().getName(); if (/계약/.test(n) && re.test(n)) return true; }
+  return false;
+}
 const stamp_ = () => Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
 const cleanSchool_ = s => String(s || '').replace(/[<>&"'\\/\u0000-\u001f]/g, '').trim().slice(0, 40);
 
@@ -394,8 +394,18 @@ function ensureHeads_() {
   const sh = sheet_('codes');
   if (sh.getMaxColumns() < 7) sh.insertColumnsAfter(sh.getMaxColumns(), 7 - sh.getMaxColumns());
   if (!sh.getRange(1, 7).getValue()) sh.getRange(1, 7).setValue('학교');
-  sheet_('schools');
+  const t = sheet_('schools');
+  if (t.getMaxColumns() < 10) t.insertColumnsAfter(t.getMaxColumns(), 10 - t.getMaxColumns());
+  if (!t.getRange(1, 10).getValue()) {
+    t.getRange(1, 10).setValue('유형');
+    const n = t.getLastRow() - 1;
+    if (n > 0) t.getRange(2, 10, n, 1).setValues(Array.from({ length: n }, () => ['학교']));
+  }
 }
+const TYPES = ['학교', '기업', '공공기관', '기타'];
+const cleanType_ = t => { t = String(t || '').trim(); if (/^[1-4]$/.test(t)) return TYPES[+t - 1]; return TYPES.includes(t) ? t : '학교'; };
+const who_ = sc => sc && sc.type === '학교' ? '학생' : '참여자';
+const unit_ = sc => sc && sc.type === '학교' ? '학년·반' : '부서';
 function folderIn_(parent, name) {
   const it = parent.getFoldersByName(name);
   return it.hasNext() ? it.next() : parent.createFolder(name);
@@ -412,7 +422,7 @@ function root_() {
 function schools_() {
   const v = sheet_('schools').getDataRange().getValues();
   const out = [];
-  for (let i = 1; i < v.length; i++) if (v[i][0]) out.push({ row: i + 1, name: String(v[i][0]).trim(), key: String(v[i][1]).trim(), teacher: v[i][2], period: v[i][3], status: v[i][4], issued: Number(v[i][5]) || 0, folder: String(v[i][6] || '') });
+  for (let i = 1; i < v.length; i++) if (v[i][0]) out.push({ row: i + 1, name: String(v[i][0]).trim(), key: String(v[i][1]).trim(), teacher: v[i][2], period: v[i][3], status: v[i][4], issued: Number(v[i][5]) || 0, folder: String(v[i][6] || ''), type: cleanType_(v[i][9]) });
   return out;
 }
 const schoolByName_ = n => schools_().find(s => s.name === cleanSchool_(n));
@@ -427,24 +437,27 @@ function schoolFolder_(sc) {
 }
 
 /* ① 계약 학교 등록: 학교목록에 한 줄 + 드라이브 폴더 + 공통 자료 복사 */
-function registerSchool_(name, key, teacher, period) {
+function registerSchool_(name, key, teacher, period, type) {
   ensureHeads_();
   name = cleanSchool_(name); key = cleanKey_(key);
-  if (!name) throw new Error('학교 이름을 입력하세요.');
+  if (!name) throw new Error('기관 이름을 입력하세요.');
   let sc = schoolByName_(name);
   if (!sc) {
     if (!key || key.length < 2) throw new Error('약칭은 영문 소문자·숫자·하이픈 2자 이상으로 정해 주세요. 예: dj-hanbit');
     const dup = schoolByKey_(key);
     if (dup) throw new Error('이미 쓰는 약칭입니다: ' + key + ' (' + dup.name + ')');
-    sheet_('schools').appendRow([name, key, clean_(teacher, 30), clean_(period, 40), '계약', 0, '', schoolLink_(key), stamp_()]);
+    sheet_('schools').appendRow([name, key, clean_(teacher, 30), clean_(period, 40), '계약', 0, '', schoolLink_(key), stamp_(), cleanType_(type)]);
     sc = schoolByName_(name);
   }
   const folder = schoolFolder_(sc);
   sheet_('schools').getRange(sc.row, 7).setValue(folder.getUrl());
-  // 공통 자료(계약서 양식 · 교육안 PPT 등)를 학교 폴더로 복사 — 이미 있으면 건너뜀
+  // 공통 자료를 기관 폴더로 복사 — 계약서는 유형에 맞는 것만 (학교용 / 기관용), 이미 있으면 건너뜀
   const common = folderIn_(root_(), COMMON_NAME).getFiles();
+  const forOrg = sc.type !== '학교';
   while (common.hasNext()) {
     const file = common.next(), nm = file.getName();
+    if (/계약/.test(nm) && (forOrg ? !/기관용/.test(nm) : /기관용/.test(nm))) continue;
+    if (/계약/.test(nm) && !forOrg && !/학교용/.test(nm) && common_has_(/학교용/)) continue;
     const to = /계약/.test(nm) ? folderIn_(folder, SUB[0]) : folderIn_(folder, SUB[3]);
     const copyName = /계약/.test(nm) ? name + '_' + nm.replace(/^재난소통_영웅_/, '') : nm;
     if (!to.getFilesByName(copyName).hasNext()) file.makeCopy(copyName, to);
@@ -456,7 +469,7 @@ function registerSchool_(name, key, teacher, period) {
 function issueSchool_(name, n) {
   ensureHeads_();
   const sc = schoolByName_(name);
-  if (!sc) throw new Error('먼저 ① 계약 학교 등록을 해 주세요: ' + name);
+  if (!sc) throw new Error('먼저 ① 계약 기관 등록을 해 주세요: ' + name);
   n = Math.max(1, Math.min(2000, parseInt(n, 10) || 0));
   const lock = LockService.getScriptLock(); lock.waitLock(30000);
   let codes;
@@ -473,8 +486,8 @@ function issueSchool_(name, n) {
   const ss = SpreadsheetApp.create(title + '_명단');
   const t = ss.getSheets()[0]; t.setName('명단');
   t.getRange(1, 1, 1, 5).merge().setValue(sc.name + ' · 재난소통 영웅 인증번호 명단 (' + stamp_() + ')').setFontSize(14).setFontWeight('bold');
-  t.getRange(2, 1, 1, 5).merge().setValue('우리 학교 게임 주소: ' + schoolLink_(sc.key) + '  ·  학생 이름은 인쇄한 종이에만 적으세요.').setFontColor('#5b6478');
-  const body = [['번호', '인증번호', '학년·반', '이름 (종이에 기록)', '나눠 준 날']].concat(codes.map((c, i) => [i + 1, c, '', '', '']));
+  t.getRange(2, 1, 1, 5).merge().setValue('우리 ' + (sc.type === '학교' ? '학교' : '기관') + ' 게임 주소: ' + schoolLink_(sc.key) + '  ·  이름은 인쇄한 종이에만 적으세요.').setFontColor('#5b6478');
+  const body = [['번호', '인증번호', unit_(sc), '이름 (종이에 기록)', '나눠 준 날']].concat(codes.map((c, i) => [i + 1, c, '', '', '']));
   t.getRange(4, 1, body.length, 5).setValues(body).setVerticalAlignment('middle').setHorizontalAlignment('center').setBorder(true, true, true, true, true, true, '#a9b2c3', SpreadsheetApp.BorderStyle.SOLID);
   t.getRange(4, 1, 1, 5).setFontWeight('bold').setBackground('#e8ecf3');
   t.getRange(5, 2, codes.length, 1).setFontFamily('Roboto Mono').setFontWeight('bold').setFontSize(12);
@@ -511,7 +524,7 @@ function cardsTab_(ss, sc, codes) {
 /* ③ 학교 현황 보고서: 03 폴더에 날짜별 시트 */
 function reportSchool_(name) {
   const sc = schoolByName_(name);
-  if (!sc) throw new Error('등록되지 않은 학교입니다: ' + name);
+  if (!sc) throw new Error('등록되지 않은 기관입니다: ' + name);
   const r = schoolRank_(sc.name, '');
   const all = rankList_();
   const set = new Set(sheet_('codes').getDataRange().getValues().slice(1).filter(x => String(x[6] || '').trim() === sc.name).map(x => norm_(x[0])));
@@ -520,7 +533,7 @@ function reportSchool_(name) {
   const ss = SpreadsheetApp.create(sc.name + '_랭킹·참여 현황_' + stamp_());
   const t = ss.getSheets()[0]; t.setName('현황');
   t.getRange(1, 1).setValue(sc.name + ' · 재난소통 영웅 참여 현황 (' + stamp_() + ')').setFontSize(14).setFontWeight('bold');
-  const sum = [['발급한 인증번호', r.issued], ['사용을 시작한 번호', r.started], ['랭킹에 오른 학생', r.count], ['평균 통과 관문 (7개 중)', r.avgPassed], ['적정 답변 합계', r.goods], ['학교 전용 주소', schoolLink_(sc.key)], ['드라이브 폴더', folderName_(sc)]];
+  const sum = [['발급한 인증번호', r.issued], ['사용을 시작한 번호', r.started], ['랭킹에 오른 ' + who_(sc), r.count], ['평균 통과 관문 (7개 중)', r.avgPassed], ['적정 답변 합계', r.goods], ['기관 전용 주소', schoolLink_(sc.key)], ['유형', sc.type], ['드라이브 폴더', folderName_(sc)]];
   t.getRange(3, 1, sum.length, 2).setValues(sum).setBorder(true, true, true, true, true, true, '#a9b2c3', SpreadsheetApp.BorderStyle.SOLID);
   t.getRange(3, 1, sum.length, 1).setFontWeight('bold').setBackground('#e8ecf3');
   const head = [['순위', '별칭', '복장', '통과 관문', '적정 답변', '총점', '훈련 횟수']];
@@ -541,43 +554,44 @@ function ask_(title, msg) {
   if (r.getSelectedButton() !== ui.Button.OK) return null;
   return r.getResponseText().trim();
 }
-const schoolList_ = () => schools_().map(s => '· ' + s.name + ' [' + s.key + '] 발급 ' + s.issued + '개').join('\n') || '(아직 등록된 학교가 없습니다)';
+const schoolList_ = () => schools_().map(s => '· ' + s.name + ' [' + s.key + '] ' + s.type + ' · 발급 ' + s.issued + '개').join('\n') || '(아직 등록된 기관이 없습니다)';
 function menuRegisterSchool() {
-  const ui = SpreadsheetApp.getUi();
-  const name = ask_('① 계약 학교 등록', '학교 이름을 입력하세요. 예: 대전한빛초등학교'); if (!name) return;
-  const key = ask_('① 계약 학교 등록', '학교 약칭을 영문으로 정하세요. 학교 전용 게임 주소와 드라이브 폴더 이름에 함께 쓰입니다.\n영문 소문자 · 숫자 · 하이픈(-). 예: dj-hanbit'); if (!key) return;
-  const teacher = ask_('① 계약 학교 등록', '담당 교사 (선택, 비워도 됩니다). 예: 김안전 교사'); if (teacher === null) return;
-  const period = ask_('① 계약 학교 등록', '계약 기간 (선택). 예: 2027.3.1 ~ 2028.2.29'); if (period === null) return;
+  const ui = SpreadsheetApp.getUi(), T = '① 계약 기관 등록';
+  const type = ask_(T, '기관 유형 번호를 입력하세요.\n1 학교   2 기업   3 공공기관   4 기타'); if (!type) return;
+  const name = ask_(T, '기관 이름을 입력하세요.\n예: 대전한빛초등학교 / ㈜한빛안전 / 대전유성구청 안전총괄과'); if (!name) return;
+  const key = ask_(T, '약칭을 영문으로 정하세요. 기관 전용 게임 주소와 드라이브 폴더 이름에 함께 쓰입니다.\n영문 소문자 · 숫자 · 하이픈(-). 예: dj-hanbit, yuseong-gu'); if (!key) return;
+  const teacher = ask_(T, '담당자 (선택, 비워도 됩니다). 예: 김안전 교사 / 김안전 주무관'); if (teacher === null) return;
+  const period = ask_(T, '계약 기간 (선택). 예: 2027.1.1 ~ 2027.12.31'); if (period === null) return;
   try {
-    const r = registerSchool_(name, key, teacher, period);
-    ui.alert('등록 완료', '드라이브 폴더: ' + folderName_(r.school) + '\n' + r.folder.getUrl() + '\n\n학교 전용 게임 주소\n' + schoolLink_(r.school.key) + '\n\n다음 단계: ② 학교별 인증번호 발급', ui.ButtonSet.OK);
+    const r = registerSchool_(name, key, teacher, period, type);
+    ui.alert('등록 완료', r.school.type + ' · 드라이브 폴더: ' + folderName_(r.school) + '\n' + r.folder.getUrl() + '\n\n기관 전용 게임 주소\n' + schoolLink_(r.school.key) + '\n\n다음 단계: ② 인증번호 발급', ui.ButtonSet.OK);
   } catch (e) { ui.alert('등록하지 못했습니다', String(e.message || e), ui.ButtonSet.OK); }
 }
 function menuIssueSchool() {
-  const ui = SpreadsheetApp.getUi();
-  const name = ask_('② 학교별 인증번호 발급', '학교 이름을 입력하세요.\n\n등록된 학교\n' + schoolList_()); if (!name) return;
-  const n = ask_('② 학교별 인증번호 발급', '만들 개수를 입력하세요 (1~2000). 예: 1100'); if (!n) return;
+  const ui = SpreadsheetApp.getUi(), T = '② 기관별 인증번호 발급';
+  const name = ask_(T, '기관 이름을 입력하세요.\n\n등록된 기관\n' + schoolList_()); if (!name) return;
+  const n = ask_(T, '만들 개수를 입력하세요 (1~2000). 예: 1100'); if (!n) return;
   try {
-    SpreadsheetApp.getActiveSpreadsheet().toast('인증번호와 명단을 만드는 중입니다. 1,000개 기준 1~2분 걸립니다.', '학교 관리', 30);
+    SpreadsheetApp.getActiveSpreadsheet().toast('인증번호와 명단을 만드는 중입니다. 1,000개 기준 1~2분 걸립니다.', '기관 관리', 30);
     const r = issueSchool_(name, n);
     ui.alert('발급 완료', r.n + '개를 만들었습니다.\n\n인쇄용 명단 (명단 탭 · 카드 탭)\n' + r.list + '\n\n오려 쓰는 카드\n' + r.cards + '\n\n폴더\n' + r.folder, ui.ButtonSet.OK);
   } catch (e) { ui.alert('발급하지 못했습니다', String(e.message || e), ui.ButtonSet.OK); }
 }
 function menuReportSchool() {
   const ui = SpreadsheetApp.getUi();
-  const name = ask_('③ 학교 현황 보고서', '학교 이름을 입력하세요.\n\n등록된 학교\n' + schoolList_()); if (!name) return;
-  try { const r = reportSchool_(name); ui.alert('보고서 완료', '랭킹에 오른 학생 ' + r.count + '명\n\n' + r.url, ui.ButtonSet.OK); }
+  const name = ask_('③ 기관 현황 보고서', '기관 이름을 입력하세요.\n\n등록된 기관\n' + schoolList_()); if (!name) return;
+  try { const r = reportSchool_(name); ui.alert('보고서 완료', '랭킹에 오른 ' + who_(schoolByName_(name)) + ' ' + r.count + '명\n\n' + r.url, ui.ButtonSet.OK); }
   catch (e) { ui.alert('보고서를 만들지 못했습니다', String(e.message || e), ui.ButtonSet.OK); }
 }
 function menuSchoolLink() {
   const ui = SpreadsheetApp.getUi();
-  const name = ask_('학교 전용 주소', '학교 이름을 입력하세요.\n\n등록된 학교\n' + schoolList_()); if (!name) return;
+  const name = ask_('기관 전용 주소', '기관 이름을 입력하세요.\n\n등록된 기관\n' + schoolList_()); if (!name) return;
   const sc = schoolByName_(name);
-  ui.alert(sc ? sc.name : '찾지 못함', sc ? '이 주소를 학교에 보내 주세요. 접속하면 학교 이름과 학교 랭킹이 먼저 보입니다.\n\n' + schoolLink_(sc.key) + '\n\n드라이브 폴더: ' + folderName_(sc) : '등록되지 않은 학교입니다.', ui.ButtonSet.OK);
+  ui.alert(sc ? sc.name : '찾지 못함', sc ? '이 주소를 기관에 보내 주세요. 접속하면 기관 이름과 기관 랭킹이 먼저 보입니다.\n\n' + schoolLink_(sc.key) + '\n\n드라이브 폴더: ' + folderName_(sc) : '등록되지 않은 기관입니다.', ui.ButtonSet.OK);
 }
 /* 연습용: 샘플초등학교 등록 + 인증번호 6개 + 현황 보고서 (편집기에서 실행해 권한 승인에도 씀) */
 function sampleSchool() {
-  const r = registerSchool_('샘플초등학교', 'sample', '연습용', '연습용');
+  const r = registerSchool_('샘플초등학교', 'sample', '연습용', '연습용', '학교');
   const s = schoolByName_('샘플초등학교');
   const i = s.issued ? null : issueSchool_('샘플초등학교', 6);
   const rep = reportSchool_('샘플초등학교');
