@@ -14,6 +14,17 @@
  *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
+/* 샘플 학교 마무리: 이미 만든 명단 시트에 카드 탭을 붙이고 현황 보고서를 만듦 */
+function finishSample() {
+  const sc = schoolByName_('샘플초등학교');
+  const codes = sheet_('codes').getDataRange().getValues().slice(1).filter(r => String(r[6] || '').trim() === sc.name).map(r => String(r[0]));
+  const it = folderIn_(schoolFolder_(sc), SUB[1]).getFilesByType(MimeType.GOOGLE_SHEETS);
+  let done = 'no sheet';
+  if (it.hasNext()) { const ss = SpreadsheetApp.openById(it.next().getId()); cardsTab_(ss, sc, codes); done = ss.getUrl(); }
+  const rep = reportSchool_(sc.name);
+  Logger.log(JSON.stringify({ cards: done, report: rep.url, link: schoolLink_(sc.key) }));
+}
+
 const STAGES = ['flood', 'fire', 'quake', 'blast', 'heat', 'collapse', 'virus'];
 const STAGE_KO = { flood: '침수', fire: '화재', quake: '지진', blast: '폭발', heat: '폭염', collapse: '건물붕괴', virus: '감염병확산' };
 const COSTUME_KO = { lime: '민방위 대원', fire: '소방관', police: '경찰관', gov: '공무원', blue: '일반인' };
@@ -572,15 +583,4 @@ function sampleSchool() {
   const rep = reportSchool_('샘플초등학교');
   Logger.log(JSON.stringify({ folder: r.folder.getUrl(), link: schoolLink_(r.school.key), issue: i, report: rep.url }));
   return { folder: r.folder.getUrl(), link: schoolLink_(r.school.key), issue: i, report: rep.url };
-}
-
-/* 샘플 학교 마무리: 이미 만든 명단 시트에 카드 탭을 붙이고 현황 보고서를 만듦 */
-function finishSample() {
-  const sc = schoolByName_('샘플초등학교');
-  const codes = sheet_('codes').getDataRange().getValues().slice(1).filter(r => String(r[6] || '').trim() === sc.name).map(r => String(r[0]));
-  const it = folderIn_(schoolFolder_(sc), SUB[1]).getFilesByType(MimeType.GOOGLE_SHEETS);
-  let done = 'no sheet';
-  if (it.hasNext()) { const ss = SpreadsheetApp.openById(it.next().getId()); cardsTab_(ss, sc, codes); done = ss.getUrl(); }
-  const rep = reportSchool_(sc.name);
-  Logger.log(JSON.stringify({ cards: done, report: rep.url, link: schoolLink_(sc.key) }));
 }
