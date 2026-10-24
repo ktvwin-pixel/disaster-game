@@ -14,6 +14,18 @@
  *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
+/* 메일 발송에 실패했던 신청자에게 이미 발급된 번호를 다시 보냄 (권한 승인 뒤 한 번 실행) */
+function resendFailed() {
+  const sh = sheet_('req'), v = sh.getDataRange().getValues(), out = [];
+  for (let i = 1; i < v.length; i++) {
+    if (v[i][4] !== '발급' || !v[i][5] || !/실패/.test(String(v[i][7]))) continue;
+    const note = mail_(String(v[i][3]), String(v[i][1]), String(v[i][5]), true);
+    sh.getRange(i + 1, 8).setValue('재발송 ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'MM-dd HH:mm') + ' · ' + note);
+    out.push(v[i][3] + ' → ' + note);
+  }
+  Logger.log(out.join('\n') || '다시 보낼 신청이 없습니다');
+}
+
 /* 메일 권한 확인: 실행하면 '메일 보내기' 권한 승인 창이 뜹니다. 승인 뒤 남은 하루 발송량을 기록에 남김 */
 function checkMail() {
   Logger.log('오늘 남은 메일 발송량: ' + MailApp.getRemainingDailyQuota() + '통');
