@@ -494,6 +494,19 @@ h1,h2,h3{color:var(--ink)}
 .pausesheet .pnote{font-size:12.5px;color:#6b7672;text-align:center;line-height:1.5}
 .pausesheet .btn.danger{color:#b3261e;border-color:#e3b1ad}
 .resumesep{align-self:center;font-size:12.5px;font-weight:700;color:#137a77;background:#e3f3f1;border-radius:20px;padding:4px 14px;margin:6px 0}
+
+.trialbar{background:#fff6e2;border:1.5px solid #e2b04a;border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.55;color:#5b4a1e;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.trialbar[hidden]{display:none}.trialbar b{color:#b3261e}.trialbar .btn{margin-left:auto}
+.tile{position:relative}.tile.locked .thumb img,.tile.locked .thumb svg{filter:grayscale(.85) brightness(.75)}
+.tile .lockbadge{position:absolute;top:8px;right:8px;z-index:2;background:rgba(15,30,36,.85);color:#fff;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:20px}
+.tile .lockbadge.free{background:#137a77}
+.tile.locked .tgo{color:#8a6d00}
+.startnote{margin:6px 0 0;text-align:center;font-size:13px;color:#6b7672}
+.aptrue{background:#fdecec;border-left:4px solid #c62828;padding:8px 10px;border-radius:8px;font-size:13px;line-height:1.5;color:#5a1f1a}
+.apform label em{font-style:normal;font-size:11px;color:#c62828;font-weight:700;margin-left:4px}
+.apform .aprow{display:flex;gap:8px}.apform .aprow label{flex:1;min-width:0}
+.apform select{width:100%;background:#fff;border:1.5px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 10px;font-size:15px;font-family:var(--body);margin-top:4px}
+#gateSheet .gicon{font-size:40px;text-align:center}
 </style>
 
 <div class="app" id="app">
@@ -521,13 +534,14 @@ h1,h2,h3{color:var(--ink)}
       <div class="costumes" id="segCostume"></div>
     </div>
     <div class="field">
-      <label for="inCode">랭킹 인증번호 <span class="muted" style="font-weight:400">(이어하기 · 선택)</span></label>
+      <label for="inCode" id="codeLabel">인증번호 <span class="muted" style="font-weight:400">(7개 재난 전체 · 랭킹 · 이어하기)</span></label>
       <div class="codeform"><input id="inCode" placeholder="KCL-XXXX-XXXX" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn ghost" id="btnLoad" type="button">불러오기</button></div>
-      <div class="formmsg" id="loadMsg" role="status">전에 쓰던 인증번호를 넣으면 내 이름·복장·통과 기록과 랭킹을 이어서 쓸 수 있어요.</div>
+      <div class="formmsg" id="loadMsg" role="status">기관이나 개인으로 받은 인증번호를 넣으면 7개 재난 훈련이 모두 열립니다. 인증번호 없이 시작하면 '화재' 1종만 체험할 수 있어요.</div>
       <div id="spApply"></div>
     </div>
     <div class="maprow"><button class="btn ghost" data-snd>배경음악</button><button class="btn ghost" data-rank>랭킹 보기</button></div>
     <button class="btn" id="btnStart">훈련 시작</button>
+    <p class="startnote" id="startNote"></p>
     <div class="foot">© 2026 KOREA CONTENTS LAB. All rights reserved.<button class="linkbtn" data-rights>저작권 정보</button><div class="rights" data-rightsbox hidden></div></div>
   </section>
 
@@ -548,6 +562,7 @@ h1,h2,h3{color:var(--ink)}
         <button class="btn ghost" id="btnReset">진행 기록 초기화</button>
       </div>
       <p class="muted" id="resetMsg" style="text-align:center;font-size:12px;margin:0" hidden></p>
+      <div class="trialbar" id="trialBar" hidden><b>체험 모드</b> 지금은 '화재' 1종만 열려 있어요. 인증번호를 받으면 7개 재난이 모두 열립니다. <button class="btn small" type="button" id="btnTrialApply">인증번호 받기</button></div>
       <div class="tiles" id="tiles"></div>
       <button class="btn go" id="btnRandom"><svg viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h17v12H2zM19 9h6l4 4v4h-10z"/><circle cx="8" cy="19" r="2.5" fill="currentColor"/><circle cx="24" cy="19" r="2.5" fill="currentColor"/><path d="M8 8v5M5.5 10.5h5" stroke-width="2.2"/></svg>현장으로 출동 <span aria-hidden="true">›</span></button>
       <button class="rankbanner" id="rankBanner" data-rank></button>
@@ -1385,6 +1400,7 @@ function show(id){['scrSetup','scrMap','scrPlay','scrResult','scrMedal','scrRank
 
 /* ===================== 설정 화면 ===================== */
 function renderSetup(){
+  if($('startNote'))$('startNote').textContent=P.code?'인증 완료 · 7개 재난 훈련이 모두 열려 있어요.':"인증번호 없이 시작하면 '화재' 1종만 체험할 수 있어요.";
   $('inName').value=P.name;
   $('segGender').innerHTML=[['m','남성'],['f','여성']].map(([k,l])=>`<button class="opt" aria-pressed="${P.g===k}" data-g="${k}" style="flex-direction:row;justify-content:center;padding:12px;font-size:15px">${l}</button>`).join('');
   $('segCostume').innerHTML=Object.entries(COST).map(([k,c])=>`<button class="opt" aria-pressed="${P.c===k}" data-c="${k}">${avatar(Object.assign({g:P.g},c))}<span>${c.n.replace('\n','<br>')}</span></button>`).join('');
@@ -1420,12 +1436,14 @@ function renderMap(){
   $('heroImg').src=PHOTO.hero;
   $('mapMe').innerHTML=`<span class="mav">${me('good')}</span><span class="mtx"><b>${esc(P.name||'새내기')} <small>${COST[P.c].n.replace('\n',' ')}</small></b><span class="mrow"><span class="mpg">관문 <em>${n}</em>/7</span><span class="mdots">${ORDER.map(d=>`<i class="${P.cleared[d]?'on':''}"></i>`).join('')}</span></span></span><span class="mgo" aria-hidden="true">›</span>`;
   $('mapProg').textContent=`관문 ${n}/7`;
-  $('tiles').innerHTML=ORDER.map(d=>{const c=P.cleared[d];return `<button class="tile ${c?'cleared':''}" data-d="${d}"><div class="thumb">${PHOTO[d]?`<img src="${PHOTO[d]}" alt="">`:sceneSVG(d,'t'+d)}<span class="tname">${dicon(d)}${D[d].n}</span>${c?`<span class="chip done">통과 ${c}점</span>`:''}</div><span class="tgo">${c?'다시 훈련':'훈련 시작'} <span aria-hidden="true">›</span></span></button>`}).join('');
+  const lock=d=>!FULL()&&d!==FREE;
+  $('trialBar').hidden=FULL();
+  $('tiles').innerHTML=ORDER.map(d=>{const c=P.cleared[d];return `<button class="tile ${c?'cleared':''} ${lock(d)?'locked':''}" data-d="${d}">${lock(d)?'<span class="lockbadge">🔒 인증 후</span>':(!FULL()?'<span class="lockbadge free">체험 가능</span>':'')}<div class="thumb">${PHOTO[d]?`<img src="${PHOTO[d]}" alt="">`:sceneSVG(d,'t'+d)}<span class="tname">${dicon(d)}${D[d].n}</span>${c?`<span class="chip done">통과 ${c}점</span>`:''}</div><span class="tgo">${lock(d)?'인증하면 열려요':c?'다시 훈련':'훈련 시작'} <span aria-hidden="true">›</span></span></button>`}).join('');
   $('resetMsg').hidden=true;
   renderBanner();
 }
 $('tiles').onclick=e=>{const t=e.target.closest('[data-d]');if(t)startStage(t.dataset.d);};
-$('btnRandom').onclick=()=>{const left=ORDER.filter(d=>!P.cleared[d]);startStage(pick(left.length?left:ORDER));};
+$('btnRandom').onclick=()=>{if(!FULL()){startStage(FREE);return;}const left=ORDER.filter(d=>!P.cleared[d]);startStage(pick(left.length?left:ORDER));};
 $('btnEdit').onclick=()=>{renderSetup();show('scrSetup');};
 $('mapMe').onclick=()=>{renderSetup();show('scrSetup');};
 $('btnMapMenu').onclick=()=>{const m=$('mapMenu');m.hidden=!m.hidden;$('btnMapMenu').setAttribute('aria-expanded',String(!m.hidden));};
@@ -1490,6 +1508,27 @@ function closePause(){$('pauseSheet').hidden=true;}
 /* ===================== 플레이 ===================== */
 let G=null;
 const START=6, PASS=8;
+/* 체험 모드: 인증번호가 없으면 '화재' 1종만 */
+const FREE='fire';
+const FULL=()=>!!P.code;
+function gate(kind,d){
+  const g=$('gateSheet');
+  const lockedList=ORDER.filter(k=>k!==FREE).map(k=>D[k].n).join(' · ');
+  $('gateBody').innerHTML=kind==='trialEnd'
+    ?`<div class="gicon">🎖️</div><div class="ptitle">화재 체험을 마쳤어요</div>
+      <div class="pinfo">인증번호를 발급받으시면 <b>${lockedList}</b>까지 <b>모든 유형의 재난 대응</b>을 준비할 수 있습니다.<br>랭킹 참여와 기록 이어하기도 함께 열립니다.</div>`
+    :`<div class="gicon">🔒</div><div class="ptitle">${d?D[d].n+' 훈련은 인증 후 열려요':'인증 후 열리는 훈련이에요'}</div>
+      <div class="pinfo">인증번호 없이 체험할 수 있는 훈련은 <b>화재</b> 1종입니다. 기관이나 개인으로 인증번호를 받으면 7개 재난 훈련을 모두 할 수 있어요.</div>`;
+  $('btnGateTry').textContent=kind==='trialEnd'?'결과 화면 보기':'화재 체험하기';
+  $('btnGateTry').onclick=kind==='trialEnd'?closeGate:()=>{closeGate();startStage(FREE);};
+  g.hidden=false;$('btnGateApply').focus();
+}
+function closeGate(){$('gateSheet').hidden=true;}
+function goApply(){
+  closeGate();G=null;renderSetup();show('scrSetup');
+  APPLY_OPEN.sp=true;$('spApply').innerHTML=applyBox('sp');bindApply('sp');
+  setTimeout(()=>{try{$('codeLabel').scrollIntoView({block:'start',behavior:'smooth'});$('spName').value?$('spOrg').focus({preventScroll:true}):$('spName').focus({preventScroll:true});}catch(e){}},120);
+}
 function chooseScenario(d){
   const pool=S.filter(s=>s.d===d);
   let fresh=pool.filter(s=>!P.seen.includes(s.id));
@@ -1497,6 +1536,7 @@ function chooseScenario(d){
   const s=pick(fresh);P.seen.push(s.id);save();return s;
 }
 function startStage(d,sv){
+  if(!FULL()&&d!==FREE){gate('locked',d);return;}
   const s=sv?S.find(x=>x.id===sv.sid):chooseScenario(d);
   G=sv?{d,s,t:sv.t.map(o=>{const a=o.a||o;if(o.p)a.press=1;return a;}),turn:sv.turn,power:sv.power,rec:sv.rec||[],busy:false,rep:REPORTERS[sv.rep]||pick(REPORTERS),pressOn:false,shown:sv.shown||[],answered:!!sv.answered}
       :{d,s,t:buildTurns(s),turn:0,power:START,rec:[],busy:false,rep:pick(REPORTERS),pressOn:false};
@@ -1784,8 +1824,11 @@ const ERRMSG={
   closed:'지금은 인증번호 신청을 받지 않습니다. 운영자에게 문의하세요.',
   rejected:'이 이메일의 신청은 승인되지 않았습니다. 운영자에게 문의하세요.',
   need_name:'이름을 입력하세요.',
-  bad_email:'이메일 주소를 다시 확인하세요.',
-  need_agree:'개인정보 수집·이용에 동의해 주세요.'
+  bad_email:'실제로 쓰는 이메일 주소를 적어 주세요. 임시 메일 주소는 받을 수 없어요.',
+  need_agree:'개인정보 수집·이용에 동의해 주세요.',
+  need_org:'소속을 실제 이름으로 적어 주세요. 예: OO시청 안전총괄과, ㈜OO, OO초등학교',
+  need_region:'지역(시·도와 시·군·구)을 선택하고 적어 주세요.',
+  email_mismatch:'두 이메일 주소가 서로 달라요. 다시 확인해 주세요.'
 };
 const ON_GAME_SITE=/github\.io$/.test(location.hostname);
 if(!ON_GAME_SITE)ERRMSG.network='이 창은 미리보기라 랭킹 서버에 연결되지 않아요. 랭킹과 인증번호 신청은 게임 주소 ktvwin-pixel.github.io/disaster-game 에서 열어 쓰세요.';
@@ -1929,16 +1972,23 @@ function renderRank(force){
 }
 /* 인증번호 신청서: 랭킹 화면(ap)과 첫 화면(sp)에서 함께 씀 */
 const APPLY_OPEN={ap:false,sp:false};
+const REGIONS=['서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시','세종특별자치시','경기도','강원특별자치도','충청북도','충청남도','전북특별자치도','전라남도','경상북도','경상남도','제주특별자치도'];
 function applyBox(px='ap'){
   return `<div class="applybox">
       <button class="linkbtn" id="${px}Toggle" type="button" style="align-self:flex-start;font-size:13px;color:var(--signal)">인증번호가 없나요? 지금 신청하기</button>
       <form class="apform" id="${px}Form" novalidate ${APPLY_OPEN[px]?'':'hidden'}>
         <div class="tip" id="${px}Mode">신청 방식을 확인하고 있어요…</div>
-        <label for="${px}Name">이름<input type="text" id="${px}Name" maxlength="20" autocomplete="name" value="${esc(P.name&&P.name!=='새내기'?P.name:'')}"></label>
-        <label for="${px}Org">소속 (선택)<input type="text" id="${px}Org" maxlength="30" placeholder="예: OO초등학교 6학년 2반"></label>
-        <label for="${px}Email">이메일 (인증번호를 받을 주소)<input type="email" id="${px}Email" maxlength="80" inputmode="email" autocomplete="email" placeholder="name@example.com"></label>
-        <label class="agree" for="${px}Agree"><input type="checkbox" id="${px}Agree"><span>인증번호 발급과 안내를 위해 이름·소속·이메일을 수집·이용하는 데 동의합니다. 랭킹에는 별칭만 표시됩니다. 만 14세 미만은 보호자 동의를 받은 뒤 신청하거나 선생님께 번호를 받으세요.</span></label>
-        <button class="btn" id="${px}Submit" type="submit">인증번호 신청</button>
+        <div class="aptrue">인증번호는 <b>입력한 이메일로만</b> 보내 드립니다. 소속 · 지역 · 이메일은 <b>실제로 쓰는 내용</b>으로 적어 주세요.</div>
+        <label for="${px}Name">이름 · 별칭<input type="text" id="${px}Name" maxlength="20" autocomplete="name" value="${esc(P.name&&P.name!=='새내기'?P.name:'')}"></label>
+        <label for="${px}Org"><span>소속 <em>필수</em></span><input type="text" id="${px}Org" maxlength="30" autocomplete="organization" placeholder="예: OO시청 안전총괄과 · ㈜OO · OO초등학교"></label>
+        <div class="aprow">
+          <label for="${px}Region"><span>지역 <em>필수</em></span><select id="${px}Region"><option value="">시 · 도 선택</option>${REGIONS.map(r=>`<option>${r}</option>`).join('')}</select></label>
+          <label for="${px}Area"><span>시 · 군 · 구 <em>필수</em></span><input type="text" id="${px}Area" maxlength="20" placeholder="예: 유성구"></label>
+        </div>
+        <label for="${px}Email"><span>이메일 <em>필수</em></span><input type="email" id="${px}Email" maxlength="80" inputmode="email" autocomplete="email" placeholder="name@example.com"></label>
+        <label for="${px}Email2">이메일 다시 입력<input type="email" id="${px}Email2" maxlength="80" inputmode="email" autocomplete="off" placeholder="같은 주소를 한 번 더"></label>
+        <label class="agree" for="${px}Agree"><input type="checkbox" id="${px}Agree"><span>인증번호 발급과 안내를 위해 이름 · 소속 · 지역 · 이메일을 수집 · 이용하는 데 동의합니다. 랭킹에는 별칭만 표시됩니다. 만 14세 미만은 보호자 동의를 받은 뒤 신청하거나 선생님께 번호를 받으세요.</span></label>
+        <button class="btn" id="${px}Submit" type="submit">인증번호 이메일로 받기</button>
       </form>
       <div class="formmsg" id="${px}Msg" role="status"></div>
     </div>`;
@@ -1948,7 +1998,7 @@ async function loadApplyMode(px='ap'){
   try{
     const c=await api({action:'config'});
     if(c.ok&&!c.open){t.textContent=ERRMSG.closed;btn.disabled=true;return;}
-    t.textContent=c.mode==='approve'?'운영자가 확인한 뒤 입력한 이메일로 인증번호를 보내 드립니다.':'신청하면 바로 인증번호가 발급되어 자동으로 등록되고, 이메일로도 보내 드립니다.';
+    t.textContent=c.mode==='approve'?'운영자가 확인한 뒤 입력한 이메일로 인증번호를 보내 드립니다.':'신청하면 바로 인증번호가 만들어져 입력한 이메일로 보내 드립니다.';
   }catch(e){t.textContent=errText(e);}
 }
 function bindApply(px='ap'){
@@ -1959,25 +2009,28 @@ function bindApply(px='ap'){
   form.onsubmit=async e=>{
     e.preventDefault();
     const msg=$(px+'Msg'),btn=$(px+'Submit');
-    const name=$(px+'Name').value.trim(),org=$(px+'Org').value.trim(),email=$(px+'Email').value.trim();
-    const bad=k=>{msg.className='formmsg err';msg.textContent=ERRMSG[k];};
-    if(!name)return bad('need_name');
-    if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(email))return bad('bad_email');
+    const name=$(px+'Name').value.trim(),org=$(px+'Org').value.trim(),email=$(px+'Email').value.trim().toLowerCase();
+    const region=$(px+'Region').value,area=$(px+'Area').value.trim(),email2=$(px+'Email2').value.trim().toLowerCase();
+    const bad=(k,el)=>{msg.className='formmsg err';msg.textContent=ERRMSG[k];try{$(px+el).focus();}catch(e){}};
+    if(!name)return bad('need_name','Name');
+    if(org.length<2||/^(없음|무소속|test|테스트|asdf|qwer|ㅁ+|ㅇ+|\.+|-+)$/i.test(org))return bad('need_org','Org');
+    if(!region)return bad('need_region','Region');
+    if(area.length<2)return bad('need_region','Area');
+    if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(email))return bad('bad_email','Email');
+    if(email!==email2)return bad('email_mismatch','Email2');
     if(!$(px+'Agree').checked)return bad('need_agree');
     btn.disabled=true;msg.className='formmsg';msg.textContent='신청을 보내고 있어요…';
     try{
-      const res=await api(Object.assign({action:'apply',name,org,email,agree:'1'},SCHOOL.key?{s:SCHOOL.key}:{}));
+      const res=await api(Object.assign({action:'apply',name,org,region,area,email,agree:'1'},SCHOOL.key?{s:SCHOOL.key}:{}));
       if(!res.ok)throw {code:res.error};
       if(res.status==='issued'){
-        try{const r0=await registerCode(res.code);applyProfile(r0);}catch(err){P.code=fmtCode(res.code);}
         APPLY_OPEN[px]=false;form.hidden=true;RK.meErr='';
-        const note=`인증번호 <b>${esc(res.code)}</b> 가 발급되어 자동으로 등록되었습니다.${res.mailed?` ${esc(email)}로도 보내 드렸어요.`:''} 다음에 이어서 하려면 이 번호가 필요하니 꼭 메모해 두세요.`;
-        sfx('good');renderBanner();
-        if(px==='sp'){
-          if(!P.name||P.name==='새내기')P.name=name;
-          $('inCode').value=res.code;renderSetup();
-          msg.className='formmsg ok';msg.innerHTML=`<div class="notice ok">${note}</div>`;
-        }else{RK.notice=note;renderRank(true);loadRank();}
+        if(px==='sp'&&(!P.name||P.name==='새내기')){P.name=name;$('inName').value=name;}
+        sfx('good');
+        const note=res.mailed===false?`인증번호를 만들었지만 메일 발송에 실패했어요. 잠시 뒤 같은 이메일로 다시 신청하면 같은 번호를 다시 보내 드립니다.`
+          :`<b>${esc(email)}</b>로 인증번호를 보냈어요. 메일에서 번호를 확인해 ${px==='sp'?'위 <b>인증번호</b> 칸에 넣고 <b>불러오기</b>':'아래 칸에 넣고 <b>등록</b>'}를 누르세요. 메일이 안 보이면 스팸함도 확인해 주세요.`;
+        msg.className='formmsg ok';msg.innerHTML=`<div class="notice ok">${note}</div>`;
+        if(px==='sp')try{$('inCode').focus();}catch(e){}else{RK.notice=note;renderRank(true);loadRank();}
       }else if(res.status==='pending'){
         APPLY_OPEN[px]=false;form.hidden=true;
         msg.className='formmsg ok';msg.textContent=res.again?`이미 접수된 신청입니다. 운영자가 승인하면 ${email}로 인증번호를 보내 드립니다.`:`신청이 접수되었습니다. 운영자가 승인하면 ${email}로 인증번호를 보내 드립니다.`;
@@ -2075,6 +2128,7 @@ function finish(){
    <ul class="sumlist">${G.rec.map((x,i)=>`<li><span style="color:${x.g==='good'?'var(--ok)':x.g==='mid'?'var(--warn)':'var(--bad)'}">${GL[x.g][0]}</span><span>${i+1}. ${x.press?'<b style="color:var(--signal)">[기자]</b> ':''}${esc(x.q)}</span></li>`).join('')}</ul>
    <div class="maprow">${all&&pass?`<button class="btn" id="rMedal">훈장 받으러 가기</button>`:pass?`<button class="btn" id="rNext">다음 관문으로</button>`:`<button class="btn" id="rRetry">재훈련 받기</button>`}<button class="btn ghost" id="rMap">현장 지도</button></div><div class="endmark"><span class="brand">KOREA CONTENTS LAB</span><small>© 2026 KOREA CONTENTS LAB · 콘텐츠 고유번호 <span data-fp>확인 중</span></small></div>`;
   show('scrResult');fillFP();
+  if(!FULL()&&d===FREE)setTimeout(()=>gate('trialEnd'),1100);
   resultRank(pass,counts.good);
   const b=id=>$(id)&&($(id).onclick=fn[id]);
   const fn={rMedal:medal,rNext:()=>{const left=ORDER.filter(k=>!P.cleared[k]);startStage(left[0]);},rRetry:()=>startStage(d),rMap:()=>{renderMap();show('scrMap');}};
@@ -2149,6 +2203,13 @@ const ourWord=()=>SCHOOL.type&&SCHOOL.type!=='학교'?'우리 기관':'우리 �
 })();
 $('spApply').innerHTML=applyBox('sp');bindApply('sp');
 sndUI();
+document.body.insertAdjacentHTML('beforeend',`<div class="pausesheet" id="gateSheet" hidden role="dialog" aria-modal="true"><div class="pbox"><div id="gateBody"></div>
+  <button class="btn" id="btnGateApply" type="button">인증번호 받으러 가기</button><button class="btn ghost" id="btnGateTry" type="button">화재 체험하기</button>
+  <div class="pnote">인증 과정은 자동입니다. 소속 · 지역 · 이메일을 적으면 인증번호가 이메일로 바로 옵니다.</div></div></div>`);
+$('btnGateApply').onclick=goApply;
+$('btnTrialApply').onclick=goApply;
+$('gateSheet').onclick=e=>{if(e.target.id==='gateSheet')closeGate();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gateSheet').hidden)closeGate();});
 renderSetup();
 show('scrSetup');
 renderResume();

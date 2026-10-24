@@ -10,7 +10,7 @@
  *   ?action=verify&code=KCL-XXXX-XXXX&nick=이름
  *   ?action=submit&code=…&nick=…&costume=lime&stage=fire&power=9&goods=4&npc=…&run=고유ID
  *   ?action=rank&code=…            (code 없이도 상위 랭킹 조회 가능)
- *   ?action=apply&name=…&org=…&email=…&agree=1   (인증번호 신청 → 자동 발급 또는 승인 대기)
+ *   ?action=apply&name=…&org=…&region=…&area=…&email=…&agree=1   (인증번호 신청 → 자동 발급 후 이메일로만 발송)
  *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
@@ -62,7 +62,7 @@ const SHEETS = {
   schools: { name: '학교목록', head: ['학교명', '약칭(주소)', '담당자', '계약 기간', '상태', '발급 수', '드라이브 폴더', '기관 전용 주소', '등록일', '유형'] },
   rank: { name: '랭킹', head: ['인증번호', '닉네임', '복장', '침수', '화재', '지진', '폭발', '폭염', '건물붕괴', '감염병확산', '통과 관문 수', '적정 답변 누적', '훈련 횟수', '관문 점수', '총점', '최근 훈련', '성별'] },
   log: { name: '훈련기록', head: ['시각', '인증번호', '닉네임', '재난', '대상', '최종 파워', '통과', '적정 답변', '훈련 ID'] },
-  req: { name: '인증신청', head: ['신청 시각', '이름', '소속', '이메일', '상태', '인증번호', '처리 시각', '메모'] },
+  req: { name: '인증신청', head: ['신청 시각', '이름', '소속', '이메일', '상태', '인증번호', '처리 시각', '메모', '지역'] },
   conf: { name: '설정', head: ['항목', '값', '설명'] }
 };
 const CONF_DEFAULT = [
@@ -73,6 +73,8 @@ const CONF_DEFAULT = [
   ['보내는 사람 이름', 'KOREA CONTENTS LAB', '안내 메일의 보낸 사람 이름']
 ];
 const GAME_URL = 'https://ktvwin-pixel.github.io/disaster-game/';
+const REGIONS = ['서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시', '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원특별자치도', '충청북도', '충청남도', '전북특별자치도', '전라남도', '경상북도', '경상남도', '제주특별자치도'];
+const TEMP_MAIL = /(^|\.)(mailinator|yopmail|guerrillamail|10minutemail|tempmail|temp-mail|sharklasers|getnada|trashmail|dispostable|maildrop)\./i;
 
 /* ---------- 웹 앱 진입점 ---------- */
 function doGet(e) {
@@ -276,16 +278,17 @@ function issueTo_(memo, school) {
   sh.getRange(sh.getLastRow() + 1, 1, 1, school ? 7 : 6).setValues([[code, memo, '사용가능', today_(), '', ''].concat(school ? [school] : [])]);
   return code;
 }
-function mail_(to, name, code) {
-  if (conf_('이메일 발송') === '끄기') return '메일 발송 꺼짐';
+function mail_(to, name, code, force) {
+  if (!force && conf_('이메일 발송') === '끄기') return '메일 발송 꺼짐';
   try {
     const sender = conf_('보내는 사람 이름') || 'KOREA CONTENTS LAB';
     MailApp.sendEmail({
       to: to, name: sender,
-      subject: '[재난소통 영웅] 랭킹 인증번호 안내',
+      subject: '[재난소통 영웅] 인증번호 안내 · 7개 재난 훈련 전체 열기',
       htmlBody: '<div style="font-family:sans-serif;line-height:1.7">' + clean_(name, 20) + '님, 재난소통 영웅 랭킹 인증번호를 보내 드립니다.<br><br>' +
         '<div style="font-size:22px;font-weight:bold;letter-spacing:2px;padding:10px 14px;background:#fff4d6;display:inline-block">' + code + '</div><br><br>' +
-        '게임 → <b>랭킹 보기</b> → 인증번호 입력란에 위 번호를 넣고 <b>등록</b>을 누르세요.<br>' +
+        '게임 첫 화면 <b>인증번호</b> 칸에 위 번호를 넣고 <b>불러오기</b>를 누르세요.<br>' +
+        '인증하면 화재 체험 외에 침수 · 지진 · 폭발 · 폭염 · 건물붕괴 · 감염병확산까지 모든 재난 훈련과 랭킹이 열립니다.<br>' +
         '게임 주소: <a href="' + GAME_URL + '">' + GAME_URL + '</a><br><br>' +
         '<span style="color:#888;font-size:12px">이 번호는 1인 1개입니다. 다른 사람과 함께 쓰지 마세요.<br>© 2026 ' + sender + '</span></div>'
     });
@@ -297,8 +300,11 @@ function mail_(to, name, code) {
 function apply_(p) {
   if (conf_('신청 받기') === '끄기') return { ok: false, error: 'closed' };
   const name = clean_(p.name, 20), org = clean_(p.org, 30), email = clean_(p.email, 80).toLowerCase();
+  const region = clean_(p.region, 12), area = clean_(p.area, 20);
   if (!name) return { ok: false, error: 'need_name' };
-  if (!EMAIL_RE.test(email)) return { ok: false, error: 'bad_email' };
+  if (org.length < 2 || /^(없음|무소속|test|테스트|asdf|qwer|ㅁ+|ㅇ+|\.+|-+)$/i.test(org)) return { ok: false, error: 'need_org' };
+  if (REGIONS.indexOf(region) < 0 || area.length < 2) return { ok: false, error: 'need_region' };
+  if (!EMAIL_RE.test(email) || TEMP_MAIL.test(email.split('@')[1])) return { ok: false, error: 'bad_email' };
   if (String(p.agree) !== '1') return { ok: false, error: 'need_agree' };
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
@@ -309,7 +315,7 @@ function apply_(p) {
       if (String(v[i][3]).toLowerCase() !== email) continue;
       const st = String(v[i][4]);
       if (st === '발급' && v[i][5]) {
-        const note = mail_(email, name, String(v[i][5]));
+        const note = mail_(email, name, String(v[i][5]), true);
         sh.getRange(i + 1, 8).setValue('재발송 요청 ' + Utilities.formatDate(new Date(), 'Asia/Seoul', 'MM-dd HH:mm') + ' · ' + note);
         return { ok: true, status: 'already', mailed: note === '메일 발송' };
       }
@@ -324,15 +330,19 @@ function apply_(p) {
       const issuedToday = v.slice(1).filter(r => r[4] === '발급' && r[6] && Utilities.formatDate(new Date(r[6]), 'Asia/Seoul', 'yyyy-MM-dd') === t).length;
       if (issuedToday >= cap) auto = false;
     }
+    if (sh.getMaxColumns() < 9) sh.insertColumnsAfter(sh.getMaxColumns(), 9 - sh.getMaxColumns());
+    if (!sh.getRange(1, 9).getValue()) sh.getRange(1, 9).setValue('지역');
+    const where = region + ' ' + area;
     if (!auto) {
-      sh.appendRow([now, name, org, email, '대기', '', '', '']);
+      sh.appendRow([now, name, org, email, '대기', '', '', '', where]);
       return { ok: true, status: 'pending' };
     }
     const sch = p.s ? schoolByKey_(p.s) : null;
-    const code = issueTo_(name + (org ? ' / ' + org : '') + ' / ' + email, sch ? sch.name : '');
-    const note = mail_(email, name, code);
-    sh.appendRow([now, name, org, email, '발급', code, now, '자동 발급 · ' + note]);
-    return { ok: true, status: 'issued', code: code, mailed: note === '메일 발송' };
+    const code = issueTo_(name + ' / ' + org + ' / ' + where + ' / ' + email, sch ? sch.name : '');
+    const note = mail_(email, name, code, true);
+    sh.appendRow([now, name, org, email, '발급', code, now, '자동 발급 · ' + note, where]);
+    // 인증번호는 응답에 넣지 않고 이메일로만 보냄 (실제 쓰는 이메일 확인)
+    return { ok: true, status: 'issued', mailed: note === '메일 발송' };
   } finally {
     lock.releaseLock();
   }
@@ -358,7 +368,7 @@ function approve_(onlySelected) {
     const r = sh.getRange(row, 1, 1, 8).getValues()[0];
     if (r[4] !== '대기') return;
     const code = issueTo_(r[1] + (r[2] ? ' / ' + r[2] : '') + ' / ' + r[3]);
-    const note = mail_(r[3], r[1], code);
+    const note = mail_(r[3], r[1], code, true);
     sh.getRange(row, 5, 1, 4).setValues([['발급', code, new Date(), '운영자 승인 · ' + note]]);
     n++;
   });
