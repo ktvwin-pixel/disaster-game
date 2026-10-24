@@ -14,6 +14,17 @@
  *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
+/* 한 번만 실행: 새 교육안 PPT로 00_공통 자료와 각 기관 04 폴더의 교육안을 바꿈 (옛 파일은 휴지통) */
+function updateDeck() {
+  const NAME = '재난소통_영웅_교육안.pptx';
+  const blob = UrlFetchApp.fetch('https://raw.githubusercontent.com/ktvwin-pixel/disaster-game/f62520966888eda4d551031a7234a049c2a2c11b/deck.pptx').getBlob().setName(NAME);
+  const swap = folder => { const it = folder.getFilesByName(NAME); while (it.hasNext()) it.next().setTrashed(true); return folder.createFile(blob.copyBlob().setName(NAME)); };
+  const out = [];
+  const f = swap(folderIn_(root_(), COMMON_NAME)); out.push('공통 ' + f.getSize() + 'B');
+  schools_().forEach(sc => { swap(folderIn_(schoolFolder_(sc), SUB[3])); out.push(sc.name); });
+  Logger.log(out.join(' | '));
+}
+
 /* 한 번만 실행: 기관용 계약서 · 운영 양식을 00_공통 자료에 넣고, 기존 기관 폴더 04에 운영 양식 복사 */
 function addOrgForms() {
   ensureHeads_();
