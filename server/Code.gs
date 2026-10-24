@@ -14,6 +14,11 @@
  *   ?action=config                  (신청 받기 여부·발급 방식 조회)
  * 응답에는 인증번호가 절대 포함되지 않습니다.
  */
+/* 메일 권한 확인: 실행하면 '메일 보내기' 권한 승인 창이 뜹니다. 승인 뒤 남은 하루 발송량을 기록에 남김 */
+function checkMail() {
+  Logger.log('오늘 남은 메일 발송량: ' + MailApp.getRemainingDailyQuota() + '통');
+}
+
 /* 한 번만 실행: 새 교육안 PPT로 00_공통 자료와 각 기관 04 폴더의 교육안을 바꿈 (옛 파일은 휴지통) */
 function updateDeck() {
   const NAME = '재난소통_영웅_교육안.pptx';
