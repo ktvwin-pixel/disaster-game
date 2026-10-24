@@ -17,7 +17,7 @@
 /* 한 번만 실행: 새 교육안 PPT로 00_공통 자료와 각 기관 04 폴더의 교육안을 바꿈 (옛 파일은 휴지통) */
 function updateDeck() {
   const NAME = '재난소통_영웅_교육안.pptx';
-  const blob = UrlFetchApp.fetch('https://raw.githubusercontent.com/ktvwin-pixel/disaster-game/f62520966888eda4d551031a7234a049c2a2c11b/deck.pptx').getBlob().setName(NAME);
+  const blob = UrlFetchApp.fetch('https://raw.githubusercontent.com/ktvwin-pixel/disaster-game/9fea0bfd36d8bd15b72231e154d6d28e52edaeed/deck.pptx').getBlob().setName(NAME);
   const swap = folder => { const it = folder.getFilesByName(NAME); while (it.hasNext()) it.next().setTrashed(true); return folder.createFile(blob.copyBlob().setName(NAME)); };
   const out = [];
   const f = swap(folderIn_(root_(), COMMON_NAME)); out.push('공통 ' + f.getSize() + 'B');
