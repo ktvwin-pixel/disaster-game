@@ -525,17 +525,61 @@ h1,h2,h3{color:var(--ink)}
 .maphero .herotext{width:fit-content;max-width:calc(100% - 60px);margin:2px auto 0;padding:8px 18px 9px;background:rgba(8,36,40,.46);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border-radius:16px;border:1px solid rgba(255,255,255,.18)}
 .maphero .herotext h2{color:#fff;margin:0}
 .maphero .herotext p{color:#ffe7a8;margin-top:3px}
+
+/* 상황 브리핑 */
+.briefsheet{position:fixed;inset:0;z-index:55;background:rgba(6,20,24,.72);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px}
+.briefsheet[hidden]{display:none}
+.briefsheet .bbox{width:min(560px,100%);background:#fbf8f1;color:#1e2b2f;border-radius:20px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.45);margin:auto 0}
+.briefsheet .bhead{position:relative;height:190px;overflow:hidden}
+.briefsheet .bhead img,.briefsheet .bhead svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.briefsheet .bshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,24,28,.05) 30%,rgba(6,24,28,.85))}
+.briefsheet .btop{position:absolute;left:16px;right:16px;bottom:14px;color:#fff}
+.briefsheet .btag{display:inline-flex;align-items:center;gap:6px;background:#f2b33d;color:#2a1d05;font-weight:800;font-size:12.5px;padding:4px 10px;border-radius:20px}
+.briefsheet .btag svg{width:15px;height:15px}
+.briefsheet .btop h3{color:#fff!important;font-weight:800;margin:8px 0 0;font-size:clamp(18px,4.6vw,22px);line-height:1.35;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.briefsheet .bbody{padding:16px 18px 20px;display:flex;flex-direction:column;gap:14px}
+.briefsheet .bchips{display:flex;flex-wrap:wrap;gap:6px}
+.briefsheet .bchips span{background:#e3f0ee;color:#0f3a40;font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:10px}
+.briefsheet .bstory{margin:0;font-size:15.5px;line-height:1.75;color:#24312f;word-break:keep-all}
+.briefsheet .bwho{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid #e6dfcf;border-radius:14px;padding:10px 12px}
+.briefsheet .bav{width:64px;flex:none;background:#f1e3c2;border-radius:12px;overflow:hidden}.briefsheet .bav svg{display:block;width:100%}
+.briefsheet .bname{font-size:14px}.briefsheet .bname small{color:#6b7672;font-size:12px;margin-left:4px}
+.briefsheet .bdesc{font-size:13.5px;line-height:1.6;color:#41504f;margin-top:2px;word-break:keep-all}
+.briefsheet .bworry{font-size:12.5px;color:#b3261e;margin-top:4px}.briefsheet .bworry b{margin-left:4px}
+.briefsheet .bmis{background:#eceef2;border-radius:14px;padding:12px 14px}
+.briefsheet .bmt{font-weight:800;color:#1b2a4a;font-size:14px;margin-bottom:4px}
+.briefsheet .bmis ol{margin:0;padding-left:20px;color:#1b2a4a;font-weight:700;font-size:14px;line-height:1.7;word-break:keep-all}
+.briefsheet .bpress{margin-top:6px;font-size:12.5px;color:#2e7d32;font-weight:600}
+.log .sit .bstorymini{display:block;margin-top:6px;font-size:.92em;opacity:.85;line-height:1.6;word-break:keep-all}
+.log .sit .linkbtn{margin-top:6px;font-size:13px;color:var(--signal)}
+/* 첫 화면: 실제 질문 장면 사진 띠 */
+.sethero{flex:none;position:relative;margin:-20px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;height:clamp(300px,62vw,420px);overflow:hidden;background:#0f3a40;display:flex;flex-direction:column;gap:6px;padding-top:6px}
+.sethero .srow{display:flex;gap:6px;width:max-content;animation:sroll 70s linear infinite;flex:1;min-height:0}
+.sethero .srow.r2{animation-direction:reverse;animation-duration:80s}
+.sethero .srow img{height:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;filter:saturate(1.05)}
+@keyframes sroll{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.sethero .srow{animation:none}}
+.sethero .sshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,40,45,.55) 0%,rgba(9,40,45,.15) 30%,rgba(9,40,45,.35) 55%,rgba(9,40,45,.92) 100%)}
+.sethero .sbrand{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-size:11px;letter-spacing:.32em;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.sethero .stitle{position:absolute;left:16px;right:16px;bottom:18px;text-align:center;color:#fff}
+.sethero .seyebrow{display:inline-block;background:#f2b33d;color:#2a1d05;font-weight:800;font-size:12px;padding:3px 10px;border-radius:20px}
+.sethero .sh1{font-size:clamp(30px,8.6vw,46px);font-weight:900;line-height:1.15;margin-top:8px;text-shadow:0 3px 10px rgba(0,0,0,.55)}
+.sethero .sh1 span{color:#ffd166}
+.sethero .ssub{margin-top:8px;font-size:clamp(12.5px,3.4vw,14.5px);line-height:1.6;color:#e9f3f1;text-shadow:0 1px 4px rgba(0,0,0,.6);word-break:keep-all}
+#scrSetup > .brand{display:none}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 
 <div class="app" id="app">
   <!-- SETUP -->
   <section class="screen setup pad" id="scrSetup">
-    <div class="brand" style="text-align:center">KOREA CONTENTS LAB</div>
+    <div class="sethero" id="setHero" aria-hidden="true"><div class="srow r1"></div><div class="srow r2"></div><div class="sshade"></div>
+      <div class="sbrand">KOREA CONTENTS LAB</div>
+      <div class="stitle"><div class="seyebrow">재난 대응 소통 훈련</div><div class="sh1">재난소통 <span>영웅</span> 훈련소</div><div class="ssub">침수 · 화재 · 지진 · 폭발 · 폭염 · 건물붕괴 · 감염병확산<br>실제 같은 현장 20곳에서 말 한마디로 생명을 지킵니다</div></div></div>
     <div class="schoolchip" id="schoolChip" hidden></div>
     <div class="resumecard" id="resumeCard" hidden></div>
     <div class="logo">
-      <div class="eyebrow">재난 대응 소통 훈련</div>
-      <h1>재난소통<br><span>영웅</span> 훈련소</h1>
+      <h1 class="sr">재난소통 영웅 훈련소</h1>
       <p class="muted" style="margin:0">재난 현장에서 피해자·시민과 다섯 번, 취재 기자와 세 번 대화합니다. 상황에 맞는 말을 직접 입력하면 파워가 오르고, 부족한 답변은 파워를 깎습니다. 7개 재난 관문을 모두 통과하면 훈장을 받습니다.</p>
     </div>
     <div class="preview" id="preview"></div>
@@ -609,6 +653,7 @@ h1,h2,h3{color:var(--ink)}
         <div class="pnote">창을 닫아도 마지막 대화까지 저장됩니다. 다시 접속하면 첫 화면에서 <b>이어서 하기</b>를 누르세요.</div>
       </div>
     </div>
+    <div class="briefsheet" id="briefSheet" hidden role="dialog" aria-modal="true" aria-label="상황 브리핑"></div>
     <div class="scene" id="scene"></div>
     <div class="alertbar" id="alertBar"></div>
     <div class="log pad" id="log" aria-live="polite"></div>
@@ -1525,6 +1570,128 @@ function openPause(){
 }
 function closePause(){$('pauseSheet').hidden=true;}
 
+/* 상황 브리핑: 출동 전에 읽는 배경 이야기 (가상 상황) */
+const BRIEF={
+f1:{when:'7월 14일 밤 9시 40분 · 호우경보 · 시간당 60mm',where:'○○구 저지대 반지하 주택가',
+ story:'저녁부터 굵은 비가 그치지 않습니다. 하수구가 넘치며 골목으로 흙탕물이 역류하기 시작했고, 반지하 세대 현관 계단으로 물이 쏟아져 들어갑니다. 주민센터에 "반지하에 어르신이 혼자 계신다"는 신고가 들어와 가장 가까이 있던 당신이 먼저 도착했습니다. 정전 위험도 커지고 있습니다.',
+ who:'혼자 사는 일흔여덟 살 어르신. 30년째 이 집에 살아 짐을 두고 나가기 싫어합니다. 옆방에는 귀가 어두운 할아버지가 삽니다.',
+ worry:'짐 · 전기 · 갈 곳',
+ mission:['물이 더 차기 전에 지상으로 대피시키기','전기 · 가스 · 이웃 확인을 짧고 분명하게','대피 뒤 머물 곳과 지원 안내']},
+f2:{when:'8월 8일 저녁 7시 10분 · 호우경보 · 시간당 70mm',where:'○○동 지하차도 입구 · 퇴근길',
+ story:'짧은 시간에 엄청난 비가 쏟아지며 지하차도 바닥에 물이 고이기 시작했습니다. 통제 차단기가 내려오기 직전, 퇴근 차량들이 입구 앞에서 멈칫거립니다. 뒤차들이 경적을 울리고 내비게이션은 계속 지하차도를 가리킵니다. 교통 통제 지원을 나온 당신에게 한 운전자가 창문을 내리고 묻습니다.',
+ who:'집까지 10분 남은 회사원. 가족이 기다리고 있어 마음이 급합니다.',
+ worry:'시간 · 차량 · 가족 연락',
+ mission:['지하차도 진입을 단호하게 막기','차가 잠기면 바로 탈출하는 순서 안내','안전한 우회로와 가족 연락 방법 안내']},
+f3:{when:'7월 27일 오후 4시 · 산간 호우주의보',where:'○○계곡 야영장',
+ story:'상류 산간에 밤새 많은 비가 내렸지만 야영장 쪽 하늘은 잠시 개었습니다. 계곡물은 아직 잔잔해 보이고, 대학생 일행 몇 명이 물가에 남아 있습니다. 군청에서 계곡 출입 통제 문자가 나갔고, 순찰 중이던 당신이 야영장에 들어섰습니다. 상류 쪽에서 물소리가 점점 커집니다.',
+ who:'친구들과 처음 계곡 야영을 온 대학생. 비싼 장비를 빌려 와서 두고 가기가 걱정입니다.',
+ worry:'장비 · 친구 · 구조',
+ mission:['물이 불기 전에 높은 곳으로 즉시 대피','고립된 친구에게 직접 들어가지 않게 막기','구조 요청과 기다리는 방법 안내']},
+h1:{when:'1월 19일 새벽 1시 30분 · 건조주의보',where:'○○아파트 102동 15층 복도',
+ story:'16층 세대 주방에서 시작된 불로 계단과 복도에 연기가 퍼지고 있습니다. 화재경보가 울리자 잠에서 깬 주민들이 현관문을 열고 웅성거립니다. 소방대가 도착해 위층 진화를 시작했고, 당신은 아래층 주민 대피를 돕기 위해 15층에 올라왔습니다.',
+ who:'아이, 다리가 불편한 어머니와 함께 사는 15층 주민. 연기를 처음 봐서 몹시 당황했습니다.',
+ worry:'엘리베이터 · 아이 · 대피 방향',
+ mission:['엘리베이터 대신 계단으로 낮게 대피','연기가 막히면 경량칸막이 · 대피공간 안내','아이를 안심시키고 함께 움직이기']},
+h2:{when:'12월 3일 오후 2시 · 건조한 날씨',where:'○○전통시장 먹자골목',
+ story:'시장 안쪽 점포 전기 콘센트에서 불꽃이 튀더니 순식간에 천막으로 불이 옮겨붙었습니다. 골목이 좁고 물건이 쌓여 있어 연기가 빠르게 번집니다. 손님과 상인들이 우왕좌왕하는 사이, 시장 순찰 중이던 당신이 가장 먼저 현장에 도착했습니다.',
+ who:'이 골목에서 25년째 장사를 한 반찬가게 사장. 가게가 가족 생계 전부입니다.',
+ worry:'가게 · 돈통 · 생계',
+ mission:['초기 진화가 어려우면 바로 대피','손님 · 이웃 상인 대피를 함께 돕기','다친 곳 확인과 앞으로 받을 지원 안내']},
+h3:{when:'4월 5일 오후 3시 · 강풍주의보 · 순간풍속 초속 20m',where:'○○군 산간 마을 · 마을회관 앞',
+ story:'건너편 능선에서 시작된 산불이 강한 바람을 타고 마을 뒷산까지 번졌습니다. 군청이 대피 명령을 내렸고, 마을 방송이 계속 나옵니다. 하지만 혼자 사는 어르신 몇 분은 집을 지키겠다며 나오지 않습니다. 대피 지원을 맡은 당신이 한 집을 찾았습니다.',
+ who:'평생 이 마을에서 농사를 지은 여든 살 어르신. 소와 집을 두고 갈 수 없다고 버팁니다.',
+ worry:'집 · 가축 · 대피 길',
+ mission:['산 반대쪽 지정 대피장소로 바로 이동','불길 · 연기 피하는 길 안내','약 · 연락처 챙기고 마음 안정시키기']},
+e1:{when:'3월 11일 오전 10시 20분 · 규모 5.4 지진',where:'○○구 업무지구 12층 사무실',
+ story:'회의 준비가 한창이던 사무실이 갑자기 크게 흔들립니다. 천장 마감재가 떨어지고 서류장이 쓰러졌습니다. 건물 안전 점검 업무로 마침 같은 층에 있던 당신에게 직원들이 몰려와 묻습니다. 계단에는 벌써 사람이 몰리기 시작했습니다.',
+ who:'입사 2년 차 직장인. 지진을 처음 겪어 손이 떨립니다.',
+ worry:'뛰어나갈지 · 여진 · 다친 동료',
+ mission:['흔들릴 때는 책상 아래에서 머리 보호','멈춘 뒤 계단으로 넓은 공터까지 이동','다친 동료 응급처치와 119 연결']},
+e2:{when:'9월 21일 오후 1시 · 동해 해역 규모 6.8 지진',where:'○○해수욕장 백사장',
+ story:'먼바다에서 큰 지진이 났지만 해변에서는 흔들림을 거의 느끼지 못했습니다. 곧바로 지진해일 경보가 발령되고 대피 방송이 울립니다. 그런데 관광객들은 바다를 구경하며 사진을 찍고 있습니다. 해변 안전요원을 돕던 당신이 한 관광객에게 다가갑니다.',
+ who:'가족, 외국인 친구와 함께 놀러 온 관광객. 경보를 대수롭지 않게 여깁니다.',
+ worry:'구경 · 차 · 짐',
+ mission:['해안에서 멀고 높은 곳으로 즉시 대피','물이 빠져도 절대 바다로 가지 않게 막기','외국인 · 아이 · 다친 사람도 함께 대피']},
+e3:{when:'5월 16일 오전 10시 50분 · 규모 5.1 지진',where:'○○초등학교 4층 6학년 교실',
+ story:'3교시 과학 수업 중 교실이 크게 흔들렸습니다. 아이들이 비명을 지르고 몇몇은 문 쪽으로 달려갑니다. 학교 안전 점검을 나와 있던 당신이 교실 앞에 섰고, 담임교사가 다급하게 도움을 청합니다.',
+ who:'경력 5년 차 담임교사. 학생 26명을 책임지고 있습니다.',
+ worry:'학생 안전 · 사라진 아이 · 학부모 연락',
+ mission:['책상 아래 → 흔들림 멈춤 → 운동장 순서 지키기','인원 확인과 사라진 학생 수색 요청','학부모 안내는 학교 공식 문자로 하나로']},
+b1:{when:'11월 22일 저녁 8시',where:'○○동 다세대주택 2층',
+ story:'"집 안에 가스 냄새가 심하다"는 신고가 들어왔습니다. 오래된 다세대주택이라 배관이 낡았고, 같은 건물에 여섯 가구가 삽니다. 가스안전 점검을 돕던 당신이 먼저 도착했습니다. 작은 불꽃 하나로도 폭발할 수 있는 상황입니다.',
+ who:'퇴근하고 막 집에 들어온 2층 주민. 원인을 직접 확인해 보려 합니다.',
+ worry:'원인 확인 · 이웃 · 다시 쓸 수 있는지',
+ mission:['불꽃 · 전기 스위치 사용 금지','밸브 잠그고 창문 열고 밖으로','밖에서 신고 · 이웃은 노크와 말로 알리기']},
+b2:{when:'6월 30일 오후 4시 · 남서풍',where:'○○산업단지 인근 주거지',
+ story:'산업단지 화학공장에서 큰 폭발음이 들렸습니다. 검은 연기가 바람을 타고 주택가 쪽으로 흘러옵니다. 시청이 "창문을 닫고 실내에 머물라"는 재난문자를 보냈고, 주민 안내를 맡은 당신이 동네를 돌고 있습니다.',
+ who:'초등학생 아이를 둔 주민. 아이가 학교에 있어 마음이 급합니다.',
+ worry:'구경 · 냄새 · 아이 · 건강',
+ mission:['현장 접근 금지 · 실내 대피','창문 닫고 환기 장치 끄기','증상 있으면 의료 기관 · 공식 발표 확인']},
+w1:{when:'8월 5일 오후 2시 · 폭염경보 · 체감온도 37도',where:'○○동 아파트 건설현장',
+ story:'그늘 하나 없는 철근 작업장에서 오전부터 작업이 이어지고 있습니다. 공정이 밀려 쉬는 시간도 줄었습니다. 폭염 현장 점검을 나온 당신에게 작업 반장이 다가옵니다. 옆에서는 한 작업자가 비틀거리기 시작합니다.',
+ who:'20년 경력 철근 반장. 오늘 할당량을 끝내야 한다는 부담이 큽니다.',
+ worry:'작업량 · 동료 상태 · 회사 눈치',
+ mission:['물 · 그늘 · 휴식 원칙 지키기','열사병 의심되면 즉시 119와 몸 식히기','작업 중지 권리와 신고 창구 안내']},
+w2:{when:'8월 12일 저녁 7시 · 열흘째 열대야',where:'○○동 언덕길 옥탑방',
+ story:'열흘째 밤에도 기온이 25도 아래로 내려가지 않습니다. 동주민센터에서 혼자 사는 어르신 안부 확인을 나왔고, 당신이 옥탑방 문을 두드립니다. 방 안은 뜨겁고, 선풍기 한 대만 돌아가고 있습니다.',
+ who:'혼자 사는 여든두 살 어르신. 전기요금이 무서워 에어컨을 켜지 않습니다.',
+ worry:'전기요금 · 쉼터 · 혼자 지내기',
+ mission:['더운 시간 외출 자제와 시원한 곳 머물기','물 자주 마시기 · 무더위쉼터 안내','어지러울 때 연락할 곳 정하기']},
+w3:{when:'7월 30일 낮 1시 · 폭염주의보 · 기온 35도',where:'○○대형마트 야외 주차장',
+ story:'뜨거운 햇볕에 주차장 바닥이 달아오르고 있습니다. 마트 앞 무더위 쉼터에서 안내 봉사를 하던 당신에게 한 아빠가 다가옵니다. 아이가 차 안에서 잠들었다며 잠깐 장을 보고 오겠다고 합니다.',
+ who:'네 살 아이와 장을 보러 온 아빠. 아이를 깨우기 싫어합니다.',
+ worry:'아이 깨우기 · 장보기 시간',
+ mission:['아이를 차 안에 혼자 두지 않기','아이 열 증상 살피고 그늘 · 물 주기','폭염 특보 확인 방법 안내']},
+c1:{when:'10월 2일 오후 3시',where:'○○동 4층 상가건물 붕괴 현장 · 전화 연결',
+ story:'노후 상가건물 한쪽이 무너지며 지하 1층과 1층이 잔해에 묻혔습니다. 구조대가 잔해를 걷어내는 동안, 안에 갇힌 사람과 휴대폰이 연결됐습니다. 상황실에서 통화 연결을 맡은 당신이 생존자 목소리를 듣고 있습니다.',
+ who:'1층 가게에서 일하던 서른다섯 살 직원. 다리가 잔해에 깔렸습니다.',
+ worry:'통증 · 숨쉬기 · 살 수 있는지',
+ mission:['침착하게 호흡과 체력 아끼기','두드리기 신호 · 배터리 아끼는 법','구조대가 가고 있다는 희망 전하기']},
+c2:{when:'10월 2일 오후 3시 30분',where:'○○동 상가건물 붕괴 현장 통제선 앞',
+ story:'건물이 무너진 지 30분, 구조대가 작업 중인 현장 주변으로 사람들이 몰려듭니다. 휴대폰을 든 시민들이 통제선을 넘으려 하고, 가스 냄새를 맡았다는 말도 나옵니다. 현장 통제를 맡은 당신 앞에 한 시민이 다가옵니다.',
+ who:'붕괴 순간을 직접 본 시민. 돕고 싶은 마음에 들어가려 합니다.',
+ worry:'안에 있는 사람 · 돕고 싶은 마음',
+ mission:['통제선 밖으로 물러나게 하기','본 내용은 구조대에 바로 전달','촬영 · 소문 자제와 도울 방법 안내']},
+c3:{when:'2월 17일 밤 11시',where:'○○아파트 (준공 40년) 3동',
+ story:'"벽에서 뚝뚝 소리가 나고 금이 번진다"는 신고가 연달아 들어왔습니다. 문이 잘 닫히지 않고 천장에서 가루가 떨어진다는 집도 있습니다. 긴급 안전 점검을 나온 당신이 3층 복도에 들어섰습니다.',
+ who:'이 아파트에 20년 산 주민. 관리사무소는 별일 아니라고 했습니다.',
+ worry:'괜찮은지 · 귀중품 · 보상',
+ mission:['붕괴 징후면 즉시 건물 밖으로','계단 이용 · 거동 불편 이웃 함께','임시 거처와 점검 일정 안내']},
+v1:{when:'11월 9일 오전 8시 · 감염병 위기 경보 \'심각\'',where:'○○보건소 앞 선별진료소 상담 부스',
+ story:'신종 호흡기 감염병이 빠르게 퍼지며 위기 경보가 \'심각\'으로 올라갔습니다. 출근 전 시민들이 선별진료소 앞에 줄을 섰습니다. 상담 부스를 맡은 당신에게 열이 나는 직장인이 다가옵니다.',
+ who:'마감을 앞둔 직장인. 쉬면 불이익을 받을까 봐 걱정합니다.',
+ worry:'출근 · 가족 · 회사',
+ mission:['증상 있으면 출근 대신 검사','가족 보호와 생활 수칙 안내','가짜 정보 바로잡고 공식 창구 연결']},
+v2:{when:'11월 12일 오후 2시',where:'○○요양원 정문',
+ story:'요양원에서 확진자가 나와 면회가 전면 중단됐습니다. 소식을 들은 보호자들이 정문 앞에 모였고, 일부는 항의하고 있습니다. 보건소에서 현장 안내를 나온 당신에게 한 보호자가 다가옵니다.',
+ who:'어머니를 요양원에 모신 딸. 어머니 상태를 몰라 애가 탑니다.',
+ worry:'어머니 상태 · 면회 · 가족 연락',
+ mission:['면회 중단 이유를 공감하며 설명','상태 안내 창구와 영상통화 연결','보호자 검사 · 다른 가족 안내']},
+v3:{when:'11월 15일 저녁 9시',where:'○○동 주민 단톡방 · 동네 게시판 앞',
+ story:'동네 마트 직원이 확진됐다는 소식이 퍼지며 단톡방에 근거 없는 이름과 동선이 돌고 있습니다. 가게에 악성 리뷰를 달자는 말까지 나옵니다. 주민 소통을 맡은 당신에게 단톡방 운영자가 연락했습니다.',
+ who:'동네 단톡방을 3년째 운영하는 주민. 분위기가 험해져 난처합니다.',
+ worry:'소문 · 개인정보 · 이웃 갈등',
+ mission:['개인정보 · 동선 퍼뜨리지 않기','공식 발표만 공유하도록 안내','확진자 배려와 이웃 신뢰 지키기']}
+};
+
+function briefBg(s){const ph=SCENE_PH[s.id];return ph?`<img src="${ph}" alt="">`:sceneSVG(SCENE_BG[s.id]||s.d,'bf');}
+function openBrief(again){
+  const s=G.s,b=BRIEF[s.id];const box=$('briefSheet');if(!b){if(!again)askTurn();return;}
+  box.innerHTML=`<div class="bbox" role="document">
+    <div class="bhead">${briefBg(s)}<div class="bshade"></div>
+      <div class="btop"><span class="btag">${dicon(s.d)} 상황 브리핑 · ${D[s.d].n}</span><h3>${esc(s.sit.split(/(?<=[.。])\s/)[0].replace(/[.。]$/,''))}</h3></div></div>
+    <div class="bbody">
+      <div class="bchips"><span>🕘 ${esc(b.when)}</span><span>📍 ${esc(b.where)}</span></div>
+      <p class="bstory">${esc(b.story)}</p>
+      <div class="bwho"><span class="bav">${npcAvatar(s.npc,'bad')}</span><div><div class="bname">만날 사람 · <b>${esc(s.npc.n)}</b> <small>${esc(s.npc.r)}</small></div><div class="bdesc">${esc(b.who)}</div><div class="bworry">걱정하는 일 <b>${esc(b.worry)}</b></div></div></div>
+      <div class="bmis"><div class="bmt">오늘의 임무</div><ol>${b.mission.map(m=>`<li>${esc(m)}</li>`).join('')}</ol>
+        <div class="bpress">구조대상자와 다섯 번 대화한 뒤, 취재 기자 질문 세 개가 이어집니다.</div></div>
+      <button class="btn" id="btnBriefGo" type="button">${again?'브리핑 닫기':'현장 투입'}</button>
+    </div></div>`;
+  box.hidden=false;box.scrollTop=0;
+  $('btnBriefGo').onclick=()=>{box.hidden=true;if(!again)askTurn();};
+  setTimeout(()=>{try{$('btnBriefGo').focus({preventScroll:true});}catch(e){}},50);
+}
 /* ===================== 플레이 ===================== */
 let G=null;
 const START=6, PASS=8;
@@ -1570,12 +1737,13 @@ function startStage(d,sv){
     `<button class="scenetog" id="sceneTog" type="button">장면 작게</button>`;
   G.big=null;$('sceneTog').onclick=()=>{G.big=$('scene').classList.contains('mini');setMini(!G.big);};
   $('alertBar').innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="none" stroke="#ff6b5b" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v5M12 17.5v.5" stroke="#ff6b5b" stroke-width="2.2" stroke-linecap="round"/></svg><span>${esc(s.sit.split(/[.。]/)[0])}</span>`;
-  $('log').innerHTML=`<div class="sit"><b>상황</b> ${esc(s.sit)}<br><b>대상</b> ${esc(s.npc.n)} · ${esc(s.npc.r)}</div>`;
+  $('log').innerHTML=`<div class="sit"><b>상황</b> ${esc(s.sit)}<br><b>대상</b> ${esc(s.npc.n)} · ${esc(s.npc.r)}${BRIEF[s.id]?`<br><span class="bstorymini">${esc(BRIEF[s.id].story)}</span><button class="linkbtn" type="button" id="btnBriefAgain">브리핑 다시 보기</button>`:''}</div>`;
+  if($('btnBriefAgain'))$('btnBriefAgain').onclick=()=>openBrief(true);
   $('inAns').value='';$('charCount').textContent='0자';$('hintBox').hidden=true;voiceMsg('');
   show('scrPlay');updHud();
   if(d==='quake')setTimeout(()=>$('scene').classList.remove('shake'),2500);
   if(sv){replayLog();return;}
-  askTurn();
+  setDock(false);openBrief(false);
 }
 /* 이어하기: 지난 대화를 다시 보여 주고 멈춘 곳부터 진행 */
 function replayLog(){
@@ -2230,6 +2398,9 @@ $('btnGateApply').onclick=goApply;
 $('btnTrialApply').onclick=goApply;
 $('gateSheet').onclick=e=>{if(e.target.id==='gateSheet')closeGate();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gateSheet').hidden)closeGate();});
+(function(){const ids=Object.keys(SCENE_PH);const half=Math.ceil(ids.length/2);
+  const row=list=>list.concat(list).map(id=>`<img src="${SCENE_PH[id]}" alt="" loading="eager">`).join('');
+  document.querySelector('#setHero .r1').innerHTML=row(ids.slice(0,half));document.querySelector('#setHero .r2').innerHTML=row(ids.slice(half));})();
 renderSetup();
 show('scrSetup');
 renderResume();
