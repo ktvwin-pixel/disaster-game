@@ -554,9 +554,10 @@ h1,h2,h3{color:var(--ink)}
 .log .sit .linkbtn{margin-top:6px;font-size:13px;color:var(--signal)}
 /* 첫 화면: 실제 질문 장면 사진 띠 */
 .sethero{flex:none;position:relative;margin:-20px calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0;height:clamp(300px,62vw,420px);overflow:hidden;background:#0f3a40;display:flex;flex-direction:column;gap:6px;padding-top:6px}
-.sethero .srow{display:flex;gap:6px;width:max-content;animation:sroll 70s linear infinite;flex:1;min-height:0}
+.sethero .srow{display:flex;gap:0;width:max-content;animation:sroll 70s linear infinite;flex:1 1 0;min-height:0;will-change:transform;transform:translateZ(0)}
+.sethero .srow canvas{display:block;flex:none}
 .sethero .srow.r2{animation-direction:reverse;animation-duration:80s}
-.sethero .srow img{height:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;filter:saturate(1.05)}
+.sethero .srow canvas+canvas{margin-left:0}
 @keyframes sroll{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.sethero .srow{animation:none}}
 .sethero .sshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,40,45,.55) 0%,rgba(9,40,45,.15) 30%,rgba(9,40,45,.35) 55%,rgba(9,40,45,.92) 100%)}
@@ -2600,9 +2601,29 @@ $('btnGateApply').onclick=goApply;
 $('btnTrialApply').onclick=goApply;
 $('gateSheet').onclick=e=>{if(e.target.id==='gateSheet')closeGate();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('gateSheet').hidden)closeGate();});
-(function(){const ids=Object.keys(SCENE_PH);const half=Math.ceil(ids.length/2);
-  const row=list=>list.concat(list).map(id=>`<img src="${SCENE_PH[id]}" alt="" loading="eager">`).join('');
-  document.querySelector('#setHero .r1').innerHTML=row(ids.slice(0,half));document.querySelector('#setHero .r2').innerHTML=row(ids.slice(half));})();
+/* 첫 화면 사진 띠: 사진을 미리 한 장의 그림판(canvas)에 그려 두고 그 그림판을 움직임 (빈칸 없이 이어짐) */
+(function(){
+  const ids=Object.keys(SCENE_PH),half=Math.ceil(ids.length/2),GAP=6,R=10;
+  const rows=[[document.querySelector('#setHero .r1'),ids.slice(0,half)],[document.querySelector('#setHero .r2'),ids.slice(half)]];
+  const imgs={};ids.forEach(id=>{const im=new Image();im.decoding='async';im.src=SCENE_PH[id];imgs[id]=im;im.onload=()=>drawAll();});
+  function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+  function drawRow(el,list){
+    const h=el.clientHeight;if(!h)return;
+    const tw=Math.round(h*4/3),dpr=Math.min(2,window.devicePixelRatio||1),W=list.length*(tw+GAP);
+    let cvs=el.querySelectorAll('canvas');
+    if(cvs.length!==2){el.innerHTML='<canvas></canvas><canvas></canvas>';cvs=el.querySelectorAll('canvas');}
+    cvs.forEach(cv=>{
+      cv.width=Math.round(W*dpr);cv.height=Math.round(h*dpr);cv.style.width=W+'px';cv.style.height=h+'px';
+      const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,h);
+      list.forEach((id,i)=>{const x=i*(tw+GAP),im=imgs[id];
+        c.save();rr(c,x,0,tw,h,R);c.clip();c.fillStyle='#164a51';c.fillRect(x,0,tw,h);
+        if(im.complete&&im.naturalWidth){const iw=im.naturalWidth,ih=im.naturalHeight,sc=Math.max(tw/iw,h/ih),sw=tw/sc,sh=h/sc;c.drawImage(im,(iw-sw)/2,(ih-sh)/2,sw,sh,x,0,tw,h);}
+        c.restore();});
+    });
+  }
+  let t=0;function drawAll(){cancelAnimationFrame(t);t=requestAnimationFrame(()=>rows.forEach(([el,l])=>drawRow(el,l)));}
+  drawAll();addEventListener('resize',drawAll);
+})();
 renderSetup();
 show('scrSetup');
 renderResume();
