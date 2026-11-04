@@ -577,6 +577,26 @@ h1,h2,h3{color:var(--ink)}
 .log .sit.boardlog{background:transparent;border:0;padding:0}
 .boardtog{position:absolute;left:10px;top:10px;z-index:4;background:rgba(15,58,64,.88);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:20px;font-size:12.5px;font-weight:700;padding:5px 11px;cursor:pointer}
 #boardSheet .pbox{max-height:90vh;overflow-y:auto}
+
+.resil{background:#fff;border:1px solid #e3ddcf;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;text-align:left;color:#1e2b2f}
+.resil .rhead{display:flex;justify-content:space-between;align-items:center}
+.resil .rtag{font-weight:800;color:#0f3a40;font-size:15px}
+.resil .rtier{color:#fff;font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:20px}
+.resil .rgauge{display:flex;flex-direction:column;align-items:center;gap:2px}
+.resil .rnote{font-size:13px;color:#41504f;text-align:center;word-break:keep-all}
+.resil .rbar{display:grid;grid-template-columns:132px 1fr 46px;gap:8px;align-items:center}
+.resil .rbl{font-size:12.5px;color:#41504f;line-height:1.3}.resil .rbl b{display:block;color:#0f3a40;font-size:13.5px}
+.resil .rbt{height:12px;background:#e4e9e8;border-radius:8px;overflow:hidden;display:block}.resil .rbt i{display:block;height:100%;border-radius:8px}
+.resil .rbv{font-weight:800;font-size:15px;text-align:right}
+.resil .rsub{font-size:13px;font-weight:700;color:#0f3a40;margin-top:4px}.resil .rsub small{font-weight:500;color:#6b7672;margin-left:6px}
+.resil .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 3px 0 6px;vertical-align:middle}.dot.g{background:#1b8a5a}.dot.m{background:#c98a12}.dot.b{background:#c62828}
+.resil .rflow{width:100%;height:auto}
+.resil .rwhy{background:#f3f6f5;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.6;word-break:keep-all}
+.resil .rgain{color:#137a77}
+.resil .rtable{display:flex;flex-direction:column;gap:7px}
+.resil .rrow{display:grid;grid-template-columns:110px 1fr 54px;gap:8px;align-items:center;font-size:13.5px}
+.resil .rrow .rn{display:flex;align-items:center;gap:5px;font-weight:700;color:#0f3a40}.resil .rrow .rn svg{width:18px;height:18px;box-sizing:border-box;padding:2px;background:#0f3a40;border-radius:5px;flex:none}
+.resil .rrow .rv{font-weight:800;text-align:right;font-size:13px}
 </style>
 
 <div class="app" id="app">
@@ -630,6 +650,7 @@ h1,h2,h3{color:var(--ink)}
         <button class="btn ghost" id="btnEdit">대원 정보</button>
         <button class="btn ghost snd-text" data-snd>배경음악</button>
         <button class="btn ghost" data-rank>랭킹 보기</button>
+        <button class="btn ghost" id="btnResil" type="button">회복력 보고서</button>
         <button class="btn ghost" id="btnReset">진행 기록 초기화</button>
       </div>
       <p class="muted" id="resetMsg" style="text-align:center;font-size:12px;margin:0" hidden></p>
@@ -699,6 +720,7 @@ h1,h2,h3{color:var(--ink)}
   <!-- RESULT -->
   <section class="screen result pad" id="scrResult" hidden></section>
   <!-- MEDAL -->
+  <section class="screen result pad" id="scrResil" hidden></section>
   <section class="screen result pad" id="scrMedal" hidden></section>
 </div>
 
@@ -1471,7 +1493,7 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 const rank=()=>({blue:'시민',gov:'주무관',fire:'소방관',police:'경찰관'})[P.c]||'대원';
 const costumeName=s=>String(s||'').replace('소방대원','소방관').replace('경찰공무원','경찰관');
 const me=mood=>avatar(Object.assign({g:P.g,mood},COST[P.c]));
-function show(id){['scrSetup','scrMap','scrPlay','scrResult','scrMedal','scrRank'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0);}
+function show(id){['scrSetup','scrMap','scrPlay','scrResult','scrResil','scrMedal','scrRank'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0);}
 
 /* ===================== 설정 화면 ===================== */
 function renderSetup(){
@@ -1535,7 +1557,7 @@ function saveProgress(){
   try{
     const g=G&&!G.done?{d:G.d,sid:G.s.id,t:G.t.map(x=>({a:Array.from(x),p:x.press?1:0})),turn:G.turn,power:G.power,rec:G.rec,rep:REPORTERS.indexOf(G.rep),shown:G.shown||[],answered:!!G.answered,fv:G.fv}:null;
     if(!g&&!Object.keys(P.cleared).length&&!P.tot)return;
-    localStorage.setItem(SAVE,JSON.stringify({v:2,at:Date.now(),p:{name:P.name,g:P.g,c:P.c,cleared:P.cleared,seen:P.seen,tot:P.tot,good:P.good,hadCode:!!P.code},g}));
+    localStorage.setItem(SAVE,JSON.stringify({v:2,at:Date.now(),p:{name:P.name,g:P.g,c:P.c,cleared:P.cleared,res:P.res||{},seen:P.seen,tot:P.tot,good:P.good,hadCode:!!P.code},g}));
   }catch(e){}
 }
 function loadProgress(){
@@ -1567,7 +1589,7 @@ function resumeProgress(){
   const p=x.p;if(p.name)P.name=p.name;
   if(p.g==='m'||p.g==='f')P.g=p.g; if(COST[p.c])P.c=p.c;
   Object.keys(p.cleared||{}).forEach(d=>{P.cleared[d]=Math.max(P.cleared[d]||0,p.cleared[d]);});
-  P.seen=p.seen||[];P.tot=Math.max(P.tot,p.tot||0);P.good=Math.max(P.good,p.good||0);
+  P.seen=p.seen||[];P.res=Object.assign({},p.res||{},P.res||{});P.tot=Math.max(P.tot,p.tot||0);P.good=Math.max(P.good,p.good||0);
   const typed=$('inCode').value.trim();
   const go=()=>{if(x.g)startStage(x.g.d,x.g);else{renderMap();show('scrMap');}};
   if(typed&&fmtCode(typed)!==P.code)loadByCode(typed).then(()=>go());else go();
@@ -1962,6 +1984,7 @@ $('inAns').addEventListener('paste',e=>blockPaste(e,(e.clipboardData||window.cli
 $('inAns').addEventListener('drop',e=>blockPaste(e,e.dataTransfer&&e.dataTransfer.getData('text')));
 $('inAns').addEventListener('beforeinput',e=>{if(/insertFrom(Paste|Drop)/.test(e.inputType||''))blockPaste(e,e.data||(e.dataTransfer&&e.dataTransfer.getData('text')));});
 $('btnQuit').onclick=openPause;
+$('btnResil').onclick=()=>{$('mapMenu').hidden=true;resilSummary(ORDER.every(k=>P.cleared[k]));};
 $('btnBoardClose').onclick=()=>{$('boardSheet').hidden=true;};
 $('boardSheet').onclick=e=>{if(e.target.id==='boardSheet')$('boardSheet').hidden=true;};
 $('btnPauseGo').onclick=closePause;
@@ -1994,7 +2017,7 @@ function submit(){
   const m=document.createElement('div');m.className='msg me';m.innerHTML=`<div class="who">${esc(P.name)} ${rank()}</div>${esc(ans)}`;$('log').appendChild(m);
   $('inAns').value='';$('charCount').textContent='0자';$('hintBox').hidden=true;voiceMsg('');
   G.power=Math.max(0,Math.min(10,G.power+(r.g==='good'?1:r.g==='bad'?-1:0)));
-  sfx(r.g);G.rec.push({q:tq[0],a:ans,g:r.g,press:!!tq.press});P.tot++;if(r.g==='good')P.good++;save();
+  sfx(r.g);G.rec.push({q:tq[0],a:ans,g:r.g,press:!!tq.press,hits:r.groups.filter(x=>x.ok).length,tot:r.groups.length,emp:!!r.emp,pw:Math.max(0,Math.min(10,G.power+(r.g==='good'?1:r.g==='bad'?-1:0)))});P.tot++;if(r.g==='good')P.good++;save();
   G.shown=(G.shown||[]).concat(modelOf(tq));G.answered=true;saveProgress();
   // 캐릭터 반응
   const npc=$('aNpc');npc.innerHTML=tq.press?reporterAvatar(G.rep,r.g):npcAvatar(G.s.npc,r.g);npc.classList.remove('hop','flinch');void npc.offsetWidth;npc.classList.add(r.g==='bad'?'flinch':'hop');
@@ -2398,6 +2421,81 @@ $('rkBack').onclick=closeRank;
 $('rkRefresh').onclick=loadRank;
 
 /* ===================== 결과 ===================== */
+/* ===================== 회복력 바로미터 ===================== */
+/* 구조대상자 안전 · 피해 당사자 마음 · 지역 회복력 (0~100%) */
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+function cov(x){if(x.g==='bad')return 0;const c=x.tot?(x.hits||0)/x.tot:(x.g==='good'?.8:.4);return Math.min(1,c+(x.g==='good'?.15:0));}
+function mind(x){if(x.g==='bad')return 0;return Math.min(1,(x.emp?.55:.15)+(x.g==='good'?.45:.2));}
+function resil(rec,power){
+  const v=rec.filter(x=>!x.press),p=rec.filter(x=>x.press);
+  const s=avg(v.map(cov)),m=avg(v.map(mind));
+  const pc=avg(p.map(cov));const pw=(power==null?(rec.length?rec[rec.length-1].pw:START):power)/10;
+  const c=pc==null?pw:(.7*pc+.3*pw);
+  const parts=[s,m,c].filter(x=>x!=null);
+  const pct=x=>x==null?null:Math.round(x*100);
+  return {s:pct(s),m:pct(m),c:pct(c),o:Math.round(avg(parts)*100)};
+}
+const RTIER=o=>o>=80?['빠른 회복','#1b8a5a','현장이 빠르게 일상으로 돌아갑니다.']:o>=60?['회복 진행','#137a77','회복이 이어지지만 보완할 부분이 남았습니다.']:o>=40?['회복 지연','#c98a12','불안과 혼란이 길어져 회복이 늦어집니다.']:['2차 피해 우려','#c62828','잘못된 행동과 소문으로 피해가 커질 수 있습니다.'];
+const RLAB={s:['구조대상자','안전 회복력','구체적인 행동 안내'],m:['피해 당사자','마음 회복력','공감 · 안심 한마디'],c:['해당 지역','지역 회복력','확인된 사실 · 다음 발표']};
+const RWHY={s:'구체적인 행동 안내가 빠지면 구조대상자가 잘못 움직여 위험이 커집니다.',m:'공감 · 안심 한마디가 없으면 피해 당사자 불안이 길어져 회복이 늦어집니다.',c:'기자에게 확인된 사실과 다음 발표 시각을 말하지 않으면 소문이 퍼져 지역 회복이 늦어집니다.'};
+function gaugeSVG(o,col,size){const r=70,c=Math.PI*r,v=Math.max(0,Math.min(100,o));
+  return `<svg viewBox="0 0 180 104" width="${size||200}" role="img" aria-label="회복력 ${o}%"><path d="M20 94 A70 70 0 0 1 160 94" fill="none" stroke="#e4e9e8" stroke-width="16" stroke-linecap="round"/>
+  <path d="M20 94 A70 70 0 0 1 160 94" fill="none" stroke="${col}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${(c*v/100).toFixed(1)} ${c.toFixed(1)}"/>
+  <text x="90" y="84" text-anchor="middle" font-size="34" font-weight="800" fill="${col}">${o}%</text></svg>`;}
+function barsHTML(R){return ['s','m','c'].map(k=>{const v=R[k]==null?0:R[k],t=RTIER(v);return `<div class="rbar"><div class="rbl"><b>${RLAB[k][0]}</b> ${RLAB[k][1]}</div><div class="rbt"><i style="width:${v}%;background:${t[1]}"></i></div><div class="rbv" style="color:${t[1]}">${v}%</div></div>`;}).join('');}
+function flowSVG(rec){
+  const pts=rec.map((x,i)=>resil(rec.slice(0,i+1),x.pw).o);const n=Math.max(rec.length,1);
+  const W=320,H=120,X=i=>34+(W-46)*(n===1?0:i/(n-1)),Y=v=>H-18-(H-34)*v/100;
+  const col={good:'#1b8a5a',mid:'#c98a12',bad:'#c62828'};
+  const line=pts.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" class="rflow" role="img" aria-label="대화마다 바뀐 회복력 흐름">
+   ${[0,50,100].map(v=>`<line x1="26" x2="${W-8}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e1e6e5" stroke-width="1"/><text x="22" y="${Y(v)+3}" font-size="9" text-anchor="end" fill="#6b7672">${v}%</text>`).join('')}
+   <path d="${line}" fill="none" stroke="#137a77" stroke-width="2.5" stroke-linejoin="round"/>
+   ${pts.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="5" fill="${col[rec[i].g]}" stroke="#fff" stroke-width="1.5"/><text x="${X(i).toFixed(1)}" y="${H-4}" font-size="9" text-anchor="middle" fill="${rec[i].press?'#2e7d32':'#6b7672'}">${rec[i].press?'기자':i+1}</text>`).join('')}
+  </svg>`;
+}
+/* 부족 · 미흡 답변 하나를 적정으로 바꿨다면 회복력이 얼마나 오르는지 */
+function whatIf(rec,power){
+  const base=resil(rec,power).o;let best=0;
+  rec.forEach((x,i)=>{if(x.g==='good')return;const r2=rec.map((y,j)=>j===i?Object.assign({},y,{g:'good',hits:Math.max(y.hits||0,Math.ceil((y.tot||3)*2/3)),emp:true}):y);
+    const d=resil(r2,Math.min(10,power+(x.g==='bad'?2:1))).o-base;if(d>best)best=d;});
+  return best;
+}
+function resilHTML(R,rec,power){
+  const t=RTIER(R.o),low=['s','m','c'].filter(k=>R[k]!=null).sort((a,b)=>R[a]-R[b])[0],gain=whatIf(rec,power);
+  return `<div class="resil">
+    <div class="rhead"><span class="rtag">회복력 바로미터</span><span class="rtier" style="background:${t[1]}">${t[0]}</span></div>
+    <div class="rgauge">${gaugeSVG(R.o,t[1])}<div class="rnote">${t[2]}</div></div>
+    ${barsHTML(R)}
+    <div class="rsub">대화마다 바뀐 회복력 <small><i class="dot g"></i>적정 <i class="dot m"></i>미흡 <i class="dot b"></i>부족</small></div>
+    ${flowSVG(rec)}
+    <div class="rwhy"><b>가장 낮은 곳 · ${RLAB[low][0]} ${R[low]}%</b><br>${RWHY[low]}${gain>0?`<br><span class="rgain">부족하거나 미흡했던 답변 하나만 적정으로 바꿔도 회복력이 <b>+${gain}%p</b> 오릅니다.</span>`:'<br><span class="rgain">모든 답변이 적정했습니다. 말 한마디가 현장을 지켰습니다.</span>'}</div>
+  </div>`;
+}
+/* 7개 현장 종합 회복력 (훈장 전에 보여 주는 화면) */
+function resilSummary(toMedal){
+  P.res=P.res||{};
+  const rows=ORDER.map(d=>({d,r:P.res[d]}));
+  const done=rows.filter(x=>x.r);
+  const A=k=>done.length?Math.round(avg(done.map(x=>x.r[k]||0))):0;
+  const total=Math.round(avg(rows.map(x=>x.r?x.r.o:0))),t=RTIER(total);
+  const R={s:A('s'),m:A('m'),c:A('c'),o:total};
+  $('scrResil').innerHTML=`
+   <div class="eyebrow">${toMedal?'훈장 수여 전 · ':''}재난 대응 회복력 종합 보고서</div>
+   <h2 style="margin:0">${esc(P.name||'새내기')} ${rank()} · 7개 현장</h2>
+   <div class="resil">
+    <div class="rhead"><span class="rtag">종합 회복력</span><span class="rtier" style="background:${t[1]}">${t[0]}</span></div>
+    <div class="rgauge">${gaugeSVG(total,t[1],230)}<div class="rnote">7개 현장 회복력 평균입니다. 훈련하지 않은 현장은 0%로 계산합니다.</div></div>
+    ${barsHTML(R)}
+    <div class="rsub">현장별 회복력</div>
+    <div class="rtable">${rows.map(x=>{const v=x.r?x.r.o:0,tt=RTIER(v);return `<div class="rrow"><span class="rn">${dicon(x.d)}${D[x.d].n}</span><span class="rbt"><i style="width:${v}%;background:${x.r?tt[1]:'#cfd6d5'}"></i></span><span class="rv" style="color:${x.r?tt[1]:'#8a9391'}">${x.r?v+'%':'미훈련'}</span></div>`;}).join('')}</div>
+    <div class="rwhy">적정 대응 한 번이 구조대상자 행동을 바꾸고, 피해 당사자 불안을 줄이고, 지역 소문을 막습니다. 회복력이 낮은 현장은 다시 훈련해 높여 보세요.</div>
+   </div>
+   <div class="maprow">${toMedal?`<button class="btn" id="rsMedal">훈장 받으러 가기</button>`:''}<button class="btn ${toMedal?'ghost':''}" id="rsMap">현장 지도</button></div>`;
+  show('scrResil');
+  if($('rsMedal'))$('rsMedal').onclick=medal;
+  $('rsMap').onclick=()=>{renderMap();show('scrMap');};
+}
 function finish(){
   const pass=G.power>=PASS, d=G.d;
   sfx(pass?'pass':'fail');
@@ -2405,6 +2503,8 @@ function finish(){
   save();G.done=true;saveProgress();
   const all=ORDER.every(k=>P.cleared[k]);
   const counts={good:0,mid:0,bad:0};G.rec.forEach(x=>counts[x.g]++);
+  const R=resil(G.rec,G.power);P.res=P.res||{};
+  if(!P.res[d]||R.o>=P.res[d].o)P.res[d]=Object.assign({at:Date.now()},R);saveProgress();
   queueRun({nick:P.name||'새내기',costume:P.c,g:P.g,stage:d,power:G.power,goods:counts.good,npc:G.s.npc.n,run:Date.now().toString(36)+Math.random().toString(36).slice(2,8)});
   $('scrResult').innerHTML=`
    <div class="eyebrow">${D[d].n} 현장 · ${esc(G.s.npc.n)}</div>
@@ -2413,6 +2513,7 @@ function finish(){
    <div class="verdict">${pass?'관문 통과!':'재훈련이 필요합니다'}</div>
    <p class="muted" style="margin:0">${pass?'상대가 당신의 안내로 안전하게 행동했습니다.':`통과 기준은 파워 ${PASS}점입니다. 핵심 포인트를 2개 이상 담아 다시 도전해 보세요. 다음엔 다른 대상이 나올 수 있습니다.`}</p>
    <p style="margin:0;font-size:13px">적정 ${counts.good} · 미흡 ${counts.mid} · 부족 ${counts.bad}</p>
+   ${resilHTML(R,G.rec,G.power)}
    <div id="resRank"></div>
    <ul class="sumlist">${G.rec.map((x,i)=>`<li><span style="color:${x.g==='good'?'var(--ok)':x.g==='mid'?'var(--warn)':'var(--bad)'}">${GL[x.g][0]}</span><span>${i+1}. ${x.press?'<b style="color:var(--signal)">[기자]</b> ':''}${esc(x.q)}</span></li>`).join('')}</ul>
    <div class="maprow">${all&&pass?`<button class="btn" id="rMedal">훈장 받으러 가기</button>`:pass?`<button class="btn" id="rNext">다음 관문으로</button>`:`<button class="btn" id="rRetry">재훈련 받기</button>`}<button class="btn ghost" id="rMap">현장 지도</button></div><div class="endmark"><span class="brand">KOREA CONTENTS LAB</span><small>© 2026 KOREA CONTENTS LAB · 콘텐츠 고유번호 <span data-fp>확인 중</span></small></div>`;
@@ -2420,7 +2521,7 @@ function finish(){
   if(!FULL()&&d===FREE)setTimeout(()=>gate('trialEnd'),1100);
   resultRank(pass,counts.good);
   const b=id=>$(id)&&($(id).onclick=fn[id]);
-  const fn={rMedal:medal,rNext:()=>{const left=ORDER.filter(k=>!P.cleared[k]);startStage(left[0]);},rRetry:()=>startStage(d),rMap:()=>{renderMap();show('scrMap');}};
+  const fn={rMedal:()=>resilSummary(true),rNext:()=>{const left=ORDER.filter(k=>!P.cleared[k]);startStage(left[0]);},rRetry:()=>startStage(d),rMap:()=>{renderMap();show('scrMap');}};
   Object.keys(fn).forEach(b);
 }
 function medal(){
@@ -2440,7 +2541,7 @@ function medal(){
      <h2>대한민국 재난소통 영웅 훈장</h2>
      <div style="font-family:var(--display);font-size:22px">${esc(P.name)} ${rank()}</div>
      <p style="margin:0;font-size:14px">위 대원은 침수·화재·지진·폭발·폭염·건물붕괴·감염병확산 7개 재난 현장에서 피해 주민과 시민의 불안에 귀 기울이고, 정확하고 따뜻한 말로 생명을 지키는 행동을 이끌었기에 이 훈장을 수여합니다.</p>
-     <p style="margin:0;font-size:13px">누적 답변 ${P.tot}회 · 적정 소통률 ${rate}%</p>
+     <p style="margin:0;font-size:13px">누적 답변 ${P.tot}회 · 적정 소통률 ${rate}% · 종합 회복력 ${Math.round(avg(ORDER.map(k=>(P.res&&P.res[k])?P.res[k].o:0)))}%</p>
      <p style="margin:0;font-size:13px">${ds} · 재난소통 영웅 훈련소</p>
      <p style="margin:0;font-size:12px;letter-spacing:.2em;font-weight:700">KOREA CONTENTS LAB</p>
      <p style="margin:0;font-size:11px">발급번호 KCL-${today.getFullYear()}-${Math.random().toString(36).slice(2,8).toUpperCase()}</p>
